@@ -39,30 +39,24 @@ body {
   */
 [role="main"] {
   padding-top: 70px; /* Space for fixed navbar */
-  margin-left: 274px !important;
-}
-
-@media screen and (max-width: 1450px) {
-  [role="main"] {
-    margin-left: 224px !important;
-  }
-}
-
-@media screen and (max-width: 1250px) {
-  [role="main"] {
-    margin-left: 204px !important;
-  }
+  margin-left: 184 !important;
 }
 
 @media screen and (max-width: 1000px) {
   [role="main"] {
-    margin-left: 184px !important;
+    margin-left: 194px !important;
   }
 }
 
-@media screen and (max-width: 830px) {
+@media screen and (max-width: 867px) {
   [role="main"] {
-    padding-top: 80px;
+    margin-left: 160px !important;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  [role="main"] {
+    padding-top: 146px;
     margin-left: auto !important;
   }
 }

@@ -3,14 +3,18 @@
 import Vue from 'vue'
 import axios from 'axios'
 import VueAxios from 'vue-axios'
-import 'bootstrap';
+import Loading from 'vue-loading-overlay'
+import 'vue-loading-overlay/dist/vue-loading.min.css';
+import 'bootstrap'
 //第三方套件習慣往上放
 
 import App from './App'
 import router from './router'
-//自己套件放下邊
+//自己定義套件放下邊
 
 Vue.use(VueAxios, axios)
+//全域使用第三方 Loading 套件
+Vue.component('Loading', Loading)
 Vue.config.productionTip = false
 
 axios.defaults.withCredentials = true

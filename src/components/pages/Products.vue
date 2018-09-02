@@ -1,7 +1,10 @@
 <template>
   <div>
+    <!-- Loading 套件 -->
+    <loading :active.sync="isLoading"></loading>
+    <!-- Loading 套件 end-->
     <div class="text-right mb-4">
-     <button type="button" @click="updateProductShow(true, {})" class="btn btn-success">Add new products</button>
+     <button type="button" @click="openProductModal(true)" class="btn btn-success">Add new products</button>
     </div>
     <div class="list-group">
       <button type="button" class="btn-info list-group-item list-group-item-action active">
@@ -24,15 +27,19 @@
             <td>{{item.title}}</td>
             <td>{{item.origin_price}}</td>
             <td>{{item.price}}</td>
-            <td>{{item.is_enabled}}</td>
             <td>
-              <button type="button" class="btn-sm btn-outline-success sm" @click="updateProductShow(false, item)">編輯</button>
-              <button type="button" class="btn-sm btn-outline-danger sm" @click="deleteProduct(item.id)">刪除</button>
+              <span v-if="item.is_enabled" class="text-success">啟用</span>
+              <span v-else>未啟用</span>
+            </td>
+            <td>
+              <button type="button" class="btn-sm btn-outline-success sm" @click="openProductModal(false, item)">編輯</button>
+              <button type="button" class="btn-sm btn-outline-danger sm" @click="openDelProductModal(item)">刪除</button>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
+    <!-- productModal start-->
     <div class="modal fade" id="productModal" tabindex="-1" role="dialog"
       aria-labelledby="exampleModalLabel" aria-hidden="true">
       <div class="modal-dialog modal-lg" role="document">
@@ -55,10 +62,11 @@
                 </div>
                 <div class="form-group">
                   <label for="customFile">或 上傳圖片
-                    <i class="fas fa-spinner fa-spin"></i>
+                    <i class="fas fa-spinner fa-spin" v-if="status.fileLoading"></i>
                   </label>
+                  <!-- 監聽使用者上傳檔案,圖片需以模擬表單的形式送出資料至API -->
                   <input type="file" id="customFile" class="form-control"
-                    ref="files">
+                    ref="fileInput" @change="uploadFile()">
                 </div>
                 <img img="https://images.unsplash.com/photo-1483985988355-763728e1935b?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=828346ed697837ce808cae68d3ddc3cf&auto=format&fit=crop&w=1350&q=80"
                   class="img-fluid" alt="">
@@ -127,7 +135,34 @@
         </div>
       </div>
     </div>
+    <!-- productModal end-->
+
+    <!-- delProductModal start -->
+    <div class="modal fade" id="delProductModal" tabindex="-1" role="dialog"
+      aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content border-0">
+          <div class="modal-header bg-danger text-white">
+            <h5 class="modal-title" id="exampleModalLabel">
+              <span>刪除產品</span>
+            </h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            是否刪除 <strong class="text-danger">{{tempProduct.title}}</strong> 商品(刪除後將無法恢復)。
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">取消</button>
+            <button type="button" class="btn btn-danger" @click="deleteProduct()">確認刪除</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- delProductModal start -->
   </div>
+
 </template>
 
 <script>
@@ -148,6 +183,10 @@ export default {
         is_enabled: 0,
         imageUrl: "",
         isNew: true
+      },
+      isLoading: false,
+      status: {
+        fileLoading: false
       }
     };
   },
@@ -157,86 +196,120 @@ export default {
   computed: {},
   methods: {
     getProducts() {
+      this.isLoading = true;
       const vm = this;
       const api = `${process.env.APIPATH}/api/${
         process.env.CUSTOMPATH
       }/products`;
       vm.axios.get(api).then(response => {
         vm.products = response.data.products;
+        this.isLoading = false;
       });
     },
-    updateProductShow(isNew, item) {
+    openProductModal(isNew, item) {
+      if (this.isLoading) {
+        console.log("here");
+        return 0;
+      }
+      console.log("there");
       if (isNew) {
         this.tempProduct = {};
         this.isNew = true;
       } else {
-        // 新增物件 Object.assign
         this.tempProduct = Object.assign({}, item);
         this.isNew = false;
       }
-      $("#productModal").modal("toggle");
+      let modal = $("#productModal");
+      if (modal) {
+        modal.modal("show");
+      }
     },
     updateProduct() {
-      $("#productModal").modal("hide");
-      let vm = this;
       let api = `${process.env.APIPATH}/api/${
         process.env.CUSTOMPATH
       }/admin/product`;
       let httpMethod = "post";
-      if (!vm.isNew) {
+      const vm = this;
+      if (vm.isNew === false) {
         api = `${process.env.APIPATH}/api/${
           process.env.CUSTOMPATH
         }/admin/product/${vm.tempProduct.id}`;
         httpMethod = "put";
       }
-      // API 資料格式為 { data: Product }
-      vm.axios[httpMethod](api, { data: vm.tempProduct })
-        .then(response => {
-          if (response.data.success === true) {
-            this.getProducts();
-            console.log("新增成功");
-          } else {
-            this.products.pop();
-            console.log("新增失敗");
+      // 注意 post 傳2個參數，此 API 是傳物件形式 不能直接傳 vm.tempProduct
+      this.$http[httpMethod](api, { data: vm.tempProduct }).then(response => {
+        // console.log(response.data);
+        // 如果新增成功
+        if (response.data.success) {
+          // 重新取得遠端資料
+          vm.getProducts();
+          let modal = $("#productModal");
+          if (modal) {
+            modal.modal("hide");
           }
-        })
-        .catch(function(error) {});
-    },
-    deleteProduct(id) {
-      let vm = this;
-      let api = `${process.env.APIPATH}/api/${
-        process.env.CUSTOMPATH
-      }/admin/product/${id}`;
-      let delIndex = 0;
-      let delItem = 0;
-      // 直接於前端刪除資料以免等待
-      vm.products.some((item, index) => {
-        console.log("item.id: ", item.id);
-        if (item.id === id) {
-          //存下刪除的物件,以防後端錯誤時加回去
-          delIndex = index;
-          delItem = Object.assign({}, vm.products[index]);
-          this.products.splice(index, 1);
-          console.log("delItem: ", delItem);
-          console.log("delIndex: ", delIndex);
-          return true;
+        } else {
+          console.log("新增失敗");
         }
       });
+    },
+    openDelProductModal(item) {
+      const vm = this;
+      $("#delProductModal").modal("show");
+      vm.tempProduct = Object.assign({}, item);
+    },
+    deleteProduct() {
+      const vm = this;
+      const api = `${process.env.APIPATH}/api/${
+        process.env.CUSTOMPATH
+      }/admin/product/${vm.tempProduct.id}`;
+      let delIndex = 0;
+      let delItem = {};
+      vm.isLoading = true;
       vm.axios
         .delete(api)
         .then(response => {
           if (response.data.success === true) {
+            vm.getProducts();
             console.log("刪除完成");
           } else {
-            //刪除出錯時將資料加回前端
-            vm.products.splice(delIndex, 0, delItem);
             console.log("刪除失敗");
           }
+          $("#delProductModal").modal("hide");
+          vm.isLoading = false;
         })
         .catch(function(error) {
-          //刪除出錯時將資料加回前端
-          vm.products.splice(delIndex - 1, 0, delItem);
           console.log(error);
+          vm.isLoading = false;
+        });
+    },
+    uploadFile() {
+      //利用 $ref 抓取 DOM 中讀到的檔案並模擬表單欄位的形式送出資料至API
+      const vm = this;
+      const uploadedFile = vm.$refs.fileInput.files[0];
+      const formData = new FormData();
+      formData.append("file-to-upload", uploadedFile);
+      const api = `${process.env.APIPATH}/api/${
+        process.env.CUSTOMPATH
+      }/admin/upload`;
+      //headers 需註明 Content-Type 為表單形式
+      vm.status.fileLoading = true;
+      vm.axios
+        .post(api, formData, {
+          headers: {
+            "Content-Type": "multipart/form-data"
+          }
+        })
+        .then(response => {
+          if (response.data.success === true) {
+            //因路徑使用 v-model 綁定物件內的值,故需用 $set強制寫入做雙向綁定
+            // this.tempProduct.imageUrl = response.data.imageUrl
+            vm.$set(vm.tempProduct, "imageUrl", response.data.imageUrl);
+          }
+          vm.status.fileLoading = false;
+        })
+        .catch(error => {
+          vm.status.fileLoading = false;
+          alert("上傳檔案失敗,請重登");
         });
     }
   }
