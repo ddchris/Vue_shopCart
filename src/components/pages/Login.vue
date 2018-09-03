@@ -30,18 +30,13 @@ export default {
       }
     };
   },
-  created() {
-    console.log(process.env.APIPATH);
-    console.log(process.env.CUSTOMPATH);
-  },
   methods: {
     login() {
       const vm = this;
       const api = `${process.env.APIPATH}/admin/signin` 
       this.axios.post(api, vm.user)
         .then(response => {
-          console.log(response);
-          if(response.data.success === true){
+          if(response.data.success){
             vm.$router.push('/admin/products')
           }
         })

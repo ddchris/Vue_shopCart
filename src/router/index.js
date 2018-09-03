@@ -10,15 +10,6 @@ export default new Router({
       path: '*',
       redirect: 'admin/products'
     },
-    // {
-    //   path: '/',
-    //   name: 'HelloWorld',
-    //   component: () =>
-    //     import('@/components/HelloWorld'),
-    //   meta: {
-    //     requireAuth: true
-    //   }
-    // },
     {
       path: '/login',
       name: 'Login',

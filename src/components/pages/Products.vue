@@ -3,6 +3,8 @@
     <!-- Loading 套件 -->
     <loading :active.sync="isLoading"></loading>
     <!-- Loading 套件 end-->
+
+    <!-- 主頁面 start -->
     <div class="text-right mb-4">
      <button type="button" @click="openProductModal(true)" class="btn btn-success">Add new products</button>
     </div>
@@ -39,6 +41,29 @@
         </tbody>
       </table>
     </div>
+    <!-- 主頁面 end -->
+
+    <!-- 分頁標籤 start -->
+    <nav aria-label="Page navigation example">
+      <ul class="pagination mt-2">
+        <li class="page-item" :class="{'disabled': !pagination.has_pre}">
+          <a @click.prevent="getProducts(pagination.current_page - 1)" class="page-link" href="#" aria-label="Previous">
+            <span aria-hidden="true">&laquo;</span>
+            <span class="sr-only">Previous</span>
+          </a>
+        </li>
+        <!-- 利用 total_pages 數字做 v-for 迴圈 -->
+        <li class="page-item" :class="{'active': pagination.current_page === page}" v-for="page in pagination.total_pages" :key="page"><a class="page-link" href="#" @click.prevent="getProducts(page)">{{page}}</a></li>
+        <li class="page-item" :class="{'disabled': !pagination.has_next}">
+          <a @click.prevent="getProducts(pagination.current_page + 1)" class="page-link" href="#" aria-label="Next">
+            <span aria-hidden="true">&raquo;</span>
+            <span class="sr-only">Next</span>
+          </a>
+        </li>
+      </ul>
+    </nav>
+    <!-- 分頁標籤 end -->
+
     <!-- productModal start-->
     <div class="modal fade" id="productModal" tabindex="-1" role="dialog"
       aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -171,6 +196,7 @@ export default {
   data() {
     return {
       products: [],
+      pagination:{},
       tempProduct: {
         title: "",
         category: "",
@@ -195,33 +221,42 @@ export default {
   },
   computed: {},
   methods: {
-    getProducts() {
+    getProducts(page = 1) {
       this.isLoading = true;
       const vm = this;
       const api = `${process.env.APIPATH}/api/${
         process.env.CUSTOMPATH
-      }/products`;
-      vm.axios.get(api).then(response => {
-        vm.products = response.data.products;
-        this.isLoading = false;
-      });
+      }/products?page=${page}`;
+      vm.axios
+        .get(api)
+        .then(response => {
+          if (response.data.success) {
+            console.log('response.data: ', response.data);
+            vm.products = response.data.products;
+            vm.pagination = response.data.pagination;
+          } else {
+            console.log("取得產品失敗");
+          }
+          this.isLoading = false;
+        })
+        .catch(error => {
+          console.log(error);
+          this.isLoading = false;
+        });
     },
     openProductModal(isNew, item) {
-      if (this.isLoading) {
-        console.log("here");
-        return 0;
-      }
-      console.log("there");
-      if (isNew) {
-        this.tempProduct = {};
-        this.isNew = true;
-      } else {
-        this.tempProduct = Object.assign({}, item);
-        this.isNew = false;
-      }
-      let modal = $("#productModal");
-      if (modal) {
-        modal.modal("show");
+      if (!this.isLoading) {
+        if (isNew) {
+          this.tempProduct = {};
+          this.isNew = true;
+        } else {
+          this.tempProduct = Object.assign({}, item);
+          this.isNew = false;
+        }
+        let modal = $("#productModal");
+        if (modal) {
+          modal.modal("show");
+        }
       }
     },
     updateProduct() {
@@ -237,20 +272,28 @@ export default {
         httpMethod = "put";
       }
       // 注意 post 傳2個參數，此 API 是傳物件形式 不能直接傳 vm.tempProduct
-      this.$http[httpMethod](api, { data: vm.tempProduct }).then(response => {
-        // console.log(response.data);
-        // 如果新增成功
-        if (response.data.success) {
-          // 重新取得遠端資料
-          vm.getProducts();
-          let modal = $("#productModal");
-          if (modal) {
-            modal.modal("hide");
+      this.$http[httpMethod](api, { data: vm.tempProduct })
+        .then(response => {
+          // console.log(response.data);
+          // 如果新增成功
+          if (response.data.success) {
+            // 重新取得遠端資料
+            vm.getProducts();
+            let modal = $("#productModal");
+            if (modal) {
+              modal.modal("hide");
+            }
+          } else {
+            if (this.isNew) {
+              console.log("新增失敗");
+            } else {
+              console.log("編輯失敗");
+            }
           }
-        } else {
-          console.log("新增失敗");
-        }
-      });
+        })
+        .catch(error => {
+          console.log(error);
+        });
     },
     openDelProductModal(item) {
       const vm = this;
@@ -304,12 +347,14 @@ export default {
             //因路徑使用 v-model 綁定物件內的值,故需用 $set強制寫入做雙向綁定
             // this.tempProduct.imageUrl = response.data.imageUrl
             vm.$set(vm.tempProduct, "imageUrl", response.data.imageUrl);
+          } else {
+            this.$bus.$emit("message:push", response.data.message, "danger");
           }
           vm.status.fileLoading = false;
         })
         .catch(error => {
+          console.log(error);
           vm.status.fileLoading = false;
-          alert("上傳檔案失敗,請重登");
         });
     }
   }

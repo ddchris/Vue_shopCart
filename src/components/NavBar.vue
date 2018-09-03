@@ -25,7 +25,7 @@ export default {
       this.axios
         .post(api)
         .then(response => {
-          console.log(response);
+          // console.log(response);
           if (response.data.success === true) {
             vm.$router.push("/login");
           }

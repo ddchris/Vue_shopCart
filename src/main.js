@@ -1,23 +1,24 @@
 // The Vue build version to load with the `import` command
 // (runtime-only or standalone) has been set in webpack.base.conf with an alias.
-import Vue from 'vue'
-import axios from 'axios'
-import VueAxios from 'vue-axios'
-import Loading from 'vue-loading-overlay'
+import Vue from 'vue';
+import axios from 'axios';
+import VueAxios from 'vue-axios';
+import Loading from 'vue-loading-overlay';
 import 'vue-loading-overlay/dist/vue-loading.min.css';
-import 'bootstrap'
+import 'bootstrap';
 //第三方套件習慣往上放
 
-import App from './App'
-import router from './router'
+import App from './App';
+import router from './router';
+import './bus';
 //自己定義套件放下邊
 
-Vue.use(VueAxios, axios)
+Vue.use(VueAxios, axios);
 //全域使用第三方 Loading 套件
-Vue.component('Loading', Loading)
-Vue.config.productionTip = false
+Vue.component('Loading', Loading);
+Vue.config.productionTip = false;
 
-axios.defaults.withCredentials = true
+axios.defaults.withCredentials = true;
 
 /* eslint-disable no-new */
 new Vue({
@@ -32,8 +33,7 @@ new Vue({
 //全域導航守衛,判斷需要驗證身分頁面
 router.beforeEach((to, from, next) => {
   if (to.meta.requireAuth === true) {
-    console.log('這裡需要驗證');
-    checkLogin(next)
+    checkLogin(next);
   } else {
     next();
   }
