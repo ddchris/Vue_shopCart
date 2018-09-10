@@ -19,9 +19,6 @@ export default new Router({
     {
       path: '/admin',
       name: 'Dashboard',
-      meta: {
-        requireAuth: true
-      },
       component: () =>
         import('@/components/Dashboard'),
       children: [{
@@ -33,6 +30,19 @@ export default new Router({
           requireAuth: true
         }
       }, ]
-    }
+    },
+    {
+      path: '/',
+      name: 'Dashboard',
+      component: () =>
+        import('@/components/Dashboard'),
+      children: [{
+        path: 'customer_orders',
+        name: 'CustomerOrders',
+        component: () =>
+          import('@/components/pages/CustomerOrders')
+      }, ]
+    },
+
   ]
 })

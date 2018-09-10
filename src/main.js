@@ -11,12 +11,15 @@ import 'bootstrap';
 import App from './App';
 import router from './router';
 import './bus';
+import currencyFilter from './filters/currency';
 //自己定義套件放下邊
 
+Vue.config.productionTip = false;
 Vue.use(VueAxios, axios);
 //全域使用第三方 Loading 套件
 Vue.component('Loading', Loading);
-Vue.config.productionTip = false;
+//全域使用 filter,前面輸入自定義名稱,後面帶入function
+Vue.filter('currency', currencyFilter)
 
 axios.defaults.withCredentials = true;
 

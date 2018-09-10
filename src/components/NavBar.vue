@@ -5,7 +5,7 @@
     <input class="form-control form-control-dark w-100" type="text" placeholder="Search" aria-label="Search">
     <ul class="navbar-nav px-3">
       <li class="nav-item text-nowrap">
-      <a class="nav-link" @click.prevent="logout()">Sign out</a>
+      <a class="nav-link" @click.prevent="logout()">登出</a>
       </li>
     </ul>
     </nav>
@@ -66,5 +66,9 @@ export default {
 .form-control-dark:focus {
   border-color: transparent;
   box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.25);
+}
+
+.navbar-nav{
+  cursor: pointer;
 }
 </style>

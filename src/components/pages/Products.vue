@@ -1,16 +1,16 @@
 <template>
   <div>
-    <!-- Loading 套件 -->
+    <!-- Loading 套件 start-->
     <loading :active.sync="isLoading"></loading>
     <!-- Loading 套件 end-->
 
     <!-- 主頁面 start -->
     <div class="text-right mb-4">
-     <button type="button" @click="openProductModal(true)" class="btn btn-success">Add new products</button>
+     <button type="button" @click="openProductModal(true)" class="btn btn-success">新增商品</button>
     </div>
     <div class="list-group">
       <button type="button" class="btn-info list-group-item list-group-item-action active">
-        Product List
+        產品列表
       </button>
       <table class="table table-striped">
         <thead>
@@ -27,8 +27,8 @@
           <tr v-for="(item) in products" :key="item.id">
             <td>{{item.category}}</td>
             <td>{{item.title}}</td>
-            <td>{{item.origin_price}}</td>
-            <td>{{item.price}}</td>
+            <td class="text-right">{{item.origin_price | currency}}</td>
+            <td class="text-right">{{item.price | currency}}</td>
             <td>
               <span v-if="item.is_enabled" class="text-success">啟用</span>
               <span v-else>未啟用</span>
@@ -93,8 +93,9 @@
                   <input type="file" id="customFile" class="form-control"
                     ref="fileInput" @change="uploadFile()">
                 </div>
-                <img img="https://images.unsplash.com/photo-1483985988355-763728e1935b?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=828346ed697837ce808cae68d3ddc3cf&auto=format&fit=crop&w=1350&q=80"
-                  class="img-fluid" alt="">
+                <div style="height: 150px; background-size: cover; background-position: center"
+                :style="{'backgroundImage': `url(${tempProduct.imageUrl})`}">
+                </div>
               </div>
               <div class="col-sm-8">
                 <div class="form-group">
@@ -196,7 +197,7 @@ export default {
   data() {
     return {
       products: [],
-      pagination:{},
+      pagination: {},
       tempProduct: {
         title: "",
         category: "",
@@ -222,26 +223,28 @@ export default {
   computed: {},
   methods: {
     getProducts(page = 1) {
-      this.isLoading = true;
       const vm = this;
+      vm.isLoading = true;
       const api = `${process.env.APIPATH}/api/${
         process.env.CUSTOMPATH
-      }/products?page=${page}`;
+      }/admin/products?page=${page}`;
       vm.axios
         .get(api)
         .then(response => {
           if (response.data.success) {
-            console.log('response.data: ', response.data);
+            console.log("response.data: ", response.data);
             vm.products = response.data.products;
             vm.pagination = response.data.pagination;
           } else {
             console.log("取得產品失敗");
+            vm.$bus.$emit("message:push", "取得產品失敗", "danger");
           }
-          this.isLoading = false;
+          vm.isLoading = false;
         })
         .catch(error => {
           console.log(error);
-          this.isLoading = false;
+          vm.$bus.$emit("message:push", "伺服器內部錯誤", "danger");
+          vm.isLoading = false;
         });
     },
     openProductModal(isNew, item) {
@@ -272,7 +275,7 @@ export default {
         httpMethod = "put";
       }
       // 注意 post 傳2個參數，此 API 是傳物件形式 不能直接傳 vm.tempProduct
-      this.$http[httpMethod](api, { data: vm.tempProduct })
+      vm.$http[httpMethod](api, { data: vm.tempProduct })
         .then(response => {
           // console.log(response.data);
           // 如果新增成功
@@ -284,15 +287,18 @@ export default {
               modal.modal("hide");
             }
           } else {
-            if (this.isNew) {
+            if (vm.isNew) {
               console.log("新增失敗");
+              vm.$bus.$emit("message:push", "新增產品失敗,請先登入", "danger");
             } else {
               console.log("編輯失敗");
+              vm.$bus.$emit("message:push", "更新產品失敗,請先登入", "danger");
             }
           }
         })
         .catch(error => {
           console.log(error);
+          vm.$bus.$emit("message:push", "伺服器內部錯誤", "danger");
         });
     },
     openDelProductModal(item) {
@@ -312,16 +318,18 @@ export default {
         .delete(api)
         .then(response => {
           if (response.data.success === true) {
-            vm.getProducts();
+            vm.getProducts(vm.pagination.current_page);
             console.log("刪除完成");
           } else {
             console.log("刪除失敗");
+            vm.$bus.$emit("message:push", "刪除產品失敗,請先登入", "danger");
           }
           $("#delProductModal").modal("hide");
           vm.isLoading = false;
         })
         .catch(function(error) {
           console.log(error);
+          vm.$bus.$emit("message:push", "伺服器內部錯誤", "danger");
           vm.isLoading = false;
         });
     },
@@ -348,12 +356,13 @@ export default {
             // this.tempProduct.imageUrl = response.data.imageUrl
             vm.$set(vm.tempProduct, "imageUrl", response.data.imageUrl);
           } else {
-            this.$bus.$emit("message:push", response.data.message, "danger");
+            vm.$bus.$emit("message:push", response.data.message, "danger");
           }
           vm.status.fileLoading = false;
         })
         .catch(error => {
           console.log(error);
+          vm.$bus.$emit("message:push", "伺服器內部錯誤", "danger");
           vm.status.fileLoading = false;
         });
     }
