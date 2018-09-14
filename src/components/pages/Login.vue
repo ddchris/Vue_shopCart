@@ -1,6 +1,10 @@
 <template>
   <div class="text-center">
     <Alert></Alert>
+    <!-- Loading 套件 start-->
+    <loading :active.sync="isLoading"></loading>
+    <!-- Loading 套件 end-->
+
     <!-- 表單可以監聽submit事件並取消預設 -->
     <form class="form-signin" @submit.prevent="login">
       <img class="mb-4" src="./../../assets/imgs/login.png" alt="" width="86" height="86">
@@ -31,14 +35,16 @@ export default {
     return {
       user: {
         username: "",
-        password: ""
-      }
+        password: "",
+      },
+      isLoading: false
     };
   },
   methods: {
     login() {
       const vm = this;
       const api = `${process.env.APIPATH}/admin/signin`;
+      vm.isLoading = true;
       this.axios
         .post(api, vm.user)
         .then(response => {
@@ -47,10 +53,12 @@ export default {
           } else {
             vm.$bus.$emit("message:push", "帳號密碼錯誤,請重新輸入", "danger");
           }
+          vm.isLoading = false;
         })
         .catch(function(error) {
           console.log(error);
           vm.$bus.$emit("message:push", "伺服器內部錯誤", "danger");
+          vm.isLoading = false;
         });
     }
   }

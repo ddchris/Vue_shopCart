@@ -24,15 +24,15 @@
                 <div class="h5">現在只要&nbsp{{item.price | currency}}&nbsp </div>
             </div>
             </div>
-            <div class="card-footer d-flex">
-            <button  @click="getProduct(item.id)" type="button" class="btn btn-outline-secondary btn-sm">
-                <i class="fas fa-spinner fa-spin" v-if="status.loadingItem === item.id"></i>
-                查看更多
-            </button>
-            <button type="button" class="btn btn-outline-danger btn-sm ml-auto" @click="addCart(item.id,1,false)">
-                <i v-if="addItem" class="fas fa-spinner fa-spin"></i>
-                加到購物車
-            </button>
+            <div class="row card-footer d-flex">
+              <button  @click="getProduct(item.id)" type="button" class="col-5 btn btn-outline-secondary btn-sm">
+                  <i class="fas fa-spinner fa-spin" v-if="status.loadingItem === item.id"></i>
+                  查看更多
+              </button>
+              <button type="button" class="col-5 btn btn-outline-success btn-sm ml-auto" @click="addCart(item.id,1,false)">
+                  <i v-if="status.addItem === item.id " class="fas fa-spinner fa-spin"></i>
+                  加到購物車
+              </button>
             </div>
         </div>
       </div>
@@ -87,40 +87,54 @@
     <!-- 商品 Modal end -->
 
     <!-- 訂單表格 start -->
-    <div class="row">
-      <h3 class="col text-center mt-1 order-title"><strong >您的購物清單</strong></h3>
-    </div>
-    <div class="row">
-      <table class="col-8 ml-auto mr-auto table mt-3 mb-5">
-        <thead>
-          <tr>
-            <th class="text-center" scope="col">刪除</th>
-            <th class="text-center" scope="col" width="240px">品名</th>
-            <th class="text-center" scope="col">數量</th>
-            <th class="text-center" scope="col">單價</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr class="pt-3 pb-3" v-for="item in carts">
-            <td class="text-center align-middle text-danger del"><i @click="delItem(item.id)" class="far fa-trash-alt"></i></td>
-            <td class="text-center align-middle">{{item.product.title}}</td>
-            <td class="text-center align-middle">{{item.qty}}</td>
-            <td class="text-center align-middle">{{item.final_total}}</td>
-          </tr>
-          <tr>
-            <td class="text-center align-middle"></td>
-            <td class="text-center align-middle"></td>
-            <td class="text-center align-middle">總計</td>
-            <td class="text-center align-middle"><strong>{{finalTotal}}</strong></td>
-          </tr>
-          <tr>
-            <td class="text-center align-middle"></td>
-            <td class="text-center align-middle"></td>
-            <td class="text-center text-success align-middle">折扣價</td>
-            <td class="text-center text-success align-middle"><strong>{{finalTotal}}</strong></td>
-          </tr>
-        </tbody>
-      </table>
+    <div v-if="showOrder" class="mt-4">
+      <div class="row">
+        <h3 class="col text-center order-title"><strong >您的購物清單</strong></h3>
+      </div>
+      <div class="row">
+        <table class="col-8 ml-auto mr-auto table mt-3">
+          <thead>
+            <tr>
+              <th class="text-center" scope="col">刪除</th>
+              <th class="text-center" scope="col" width="240px">品名</th>
+              <th class="text-center" scope="col">數量</th>
+              <th class="text-center" scope="col">單價</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="pt-3 pb-3" v-for="item in carts">
+              <td class="text-center align-middle text-danger del">
+                <button type="button" class="btn btn-outline-danger">
+                  <i @click="delItem(item.id)" class="far fa-trash-alt"></i>
+                </button>
+              </td>
+              <td class="text-center align-middle">{{item.product.title}}</td>
+              <td class="text-center align-middle">{{item.qty}}</td>
+              <td class="text-center align-middle">{{item.final_total}}</td>
+            </tr>
+            <tr>
+              <td class="text-center align-middle"></td>
+              <td class="text-center align-middle"></td>
+              <td class="text-center align-middle">總計</td>
+              <td class="text-center align-middle"><strong>{{finalTotal}}</strong></td>
+            </tr>
+            <tr v-if="useCoupon">
+              <td class="text-center align-middle"></td>
+              <td class="text-center align-middle"></td>
+              <td class="text-center text-success align-middle">折扣價</td>
+              <td class="text-center text-success align-middle"><strong>{{finalTotal}}</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="row">
+        <div class="col-7 input-group mb-5 ml-auto mr-auto">
+          <input type="text" class="form-control" placeholder="請輸入優惠碼" aria-label="Recipient's username" aria-describedby="basic-addon2">
+          <div class="input-group-append">
+            <button class="btn btn-outline-primary" type="button">套用優惠碼</button>
+          </div>
+        </div>
+      </div>
     </div>
     <!-- 訂單表格 end -->
   </div>
@@ -149,11 +163,13 @@ export default {
       },
       isLoading: false,
       status: {
-        loadingItem: false,
-        addItem: false
+        loadingItem: '',
+        addItem: ''
       },
       carts: [],
-      finalTotal: 0
+      finalTotal: 0,
+      useCoupon: false,
+      showOrder: false
     };
   },
   created() {
@@ -167,7 +183,7 @@ export default {
       vm.isLoading = true;
       const api = `${process.env.APIPATH}/api/${
         process.env.CUSTOMPATH
-      }/products`;
+      }/products/all`;
       vm.axios
         .get(api)
         .then(response => {
@@ -193,7 +209,6 @@ export default {
       const api = `${process.env.APIPATH}/api/${
         process.env.CUSTOMPATH
       }/product/${id}`;
-      vm.isLoading = true;
       vm.axios
         .get(api)
         .then(response => {
@@ -205,14 +220,12 @@ export default {
             console.log("取得產品失敗");
             vm.$bus.$emit("message:push", "取得產品失敗", "danger");
           }
-          vm.isLoading = false;
           $("#productModal").modal("show");
           vm.status.loadingItem = "";
         })
         .catch(error => {
           console.log(error);
           vm.$bus.$emit("message:push", "伺服器內部錯誤", "danger");
-          vm.isLoading = false;
           vm.status.loadingItem = "";
         });
     },
@@ -221,9 +234,8 @@ export default {
       if (byModal) {
         vm.isLoading = true
       } else {
-        vm.addItem = true;
+        vm.status.addItem = id;
       }
-      vm.status.loadingItem = id;
       const api = `${process.env.APIPATH}/api/${process.env.CUSTOMPATH}/cart`;
       const cart = {
         product_id: id,
@@ -238,15 +250,14 @@ export default {
             console.log("取得產品失敗");
             vm.$bus.$emit("message:push", "加入購物車失敗", "danger");
           }
-          vm.addItem = false;
+          vm.status.addItem = '';
           $("#productModal").modal("hide");
-          vm.status.loadingItem = "";
           vm.getCart();
         })
         .catch(error => {
           console.log(error);
           vm.$bus.$emit("message:push", "伺服器內部錯誤!!", "danger");
-          vm.addItem = false;
+          vm.status.addItem = '';
           vm.status.loadingItem = "";
           $("#productModal").modal("hide");
           vm.getCart();
@@ -261,16 +272,19 @@ export default {
         .then(response => {
           if (response.data.success) {
             // console.log("response.data.carts: ", response.data.data);
-            if (response.data.data.carts) {
+            if (response.data.data.carts && response.data.data.carts.length !== 0) {
               vm.carts = [...response.data.data.carts];
               vm.finalTotal = response.data.data.final_total;
-              console.log("vm.carts: ", vm.carts);
+              vm.showOrder = true
+              console.log("vm.carts",response.data.data.carts);
             } else {
               vm.carts = [];
+              vm.showOrder = false
               console.log("here");
             }
           } else {
             console.log("取得購物車失敗");
+            vm.showOrder = false
             vm.$bus.$emit("message:push", "取得得購物車失敗", "danger");
           }
           vm.isLoading = false;
@@ -278,6 +292,7 @@ export default {
         .catch(error => {
           console.log(error);
           vm.$bus.$emit("message:push", "伺服器內部錯誤!!!", "danger");
+          vm.showOrder = false
           vm.isLoading = false;
         });
     },
@@ -310,12 +325,6 @@ export default {
 </script>
 
 <style scoped>
-.table i:before {
-  cursor: pointer;
-  border: 1px solid red;
-  border-radius: 30%;
-  padding: 10px;
-}
 
 .table tr td {
   padding: 20px !important;

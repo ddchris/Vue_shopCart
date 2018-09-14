@@ -232,7 +232,7 @@ export default {
         .get(api)
         .then(response => {
           if (response.data.success) {
-            console.log("response.data: ", response.data);
+            // console.log("response.data: ", response.data);
             vm.products = response.data.products;
             vm.pagination = response.data.pagination;
           } else {
@@ -263,43 +263,54 @@ export default {
       }
     },
     updateProduct() {
-      let api = `${process.env.APIPATH}/api/${
-        process.env.CUSTOMPATH
-      }/admin/product`;
-      let httpMethod = "post";
-      const vm = this;
-      if (vm.isNew === false) {
-        api = `${process.env.APIPATH}/api/${
+      if (!this.isLoading) {
+        let api = `${process.env.APIPATH}/api/${
           process.env.CUSTOMPATH
-        }/admin/product/${vm.tempProduct.id}`;
-        httpMethod = "put";
-      }
-      // 注意 post 傳2個參數，此 API 是傳物件形式 不能直接傳 vm.tempProduct
-      vm.$http[httpMethod](api, { data: vm.tempProduct })
-        .then(response => {
-          // console.log(response.data);
-          // 如果新增成功
-          if (response.data.success) {
-            // 重新取得遠端資料
-            vm.getProducts();
-            let modal = $("#productModal");
-            if (modal) {
-              modal.modal("hide");
-            }
-          } else {
-            if (vm.isNew) {
-              console.log("新增失敗");
-              vm.$bus.$emit("message:push", "新增產品失敗,請先登入", "danger");
+        }/admin/product`;
+        let httpMethod = "post";
+        const vm = this;
+        if (vm.isNew === false) {
+          api = `${process.env.APIPATH}/api/${
+            process.env.CUSTOMPATH
+          }/admin/product/${vm.tempProduct.id}`;
+          httpMethod = "put";
+        }
+        vm.isLoading = true;
+        // 注意 post 傳2個參數，此 API 是傳物件形式 不能直接傳 vm.tempProduct
+        vm.$http[httpMethod](api, { data: vm.tempProduct })
+          .then(response => {
+            // console.log(response.data);
+            // 如果新增成功
+            if (response.data.success) {
+              // 重新取得遠端資料
+              vm.getProducts();
+              let modal = $("#productModal");
+              if (modal) {
+                modal.modal("hide");
+              }
             } else {
-              console.log("編輯失敗");
-              vm.$bus.$emit("message:push", "更新產品失敗,請先登入", "danger");
+              if (vm.isNew) {
+                console.log("新增失敗");
+                vm.$bus.$emit(
+                  "message:push",
+                  "新增產品失敗,請先登入",
+                  "danger"
+                );
+              } else {
+                console.log("編輯失敗");
+                vm.$bus.$emit(
+                  "message:push",
+                  "更新產品失敗,請先登入",
+                  "danger"
+                );
+              }
             }
-          }
-        })
-        .catch(error => {
-          console.log(error);
-          vm.$bus.$emit("message:push", "伺服器內部錯誤", "danger");
-        });
+          })
+          .catch(error => {
+            console.log(error);
+            vm.$bus.$emit("message:push", "伺服器內部錯誤", "danger");
+          });
+      }
     },
     openDelProductModal(item) {
       const vm = this;
@@ -322,7 +333,7 @@ export default {
             console.log("刪除完成");
           } else {
             console.log("刪除失敗");
-            vm.$bus.$emit("message:push", "刪除產品失敗,請先登入", "danger");
+            vm.$bus.$emit("message:push", "刪除產品失敗", "danger");
           }
           $("#delProductModal").modal("hide");
           vm.isLoading = false;

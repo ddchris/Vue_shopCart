@@ -1,5 +1,8 @@
 <template>
   <div>
+    <!-- Loading 套件 start-->
+    <loading :active.sync="isLoading"></loading>
+    <!-- Loading 套件 end-->
     <nav class="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 shadow">
     <a class="navbar-brand col-sm-3 col-md-2 mr-0" href="#">Company name</a>
     <input class="form-control form-control-dark w-100" type="text" placeholder="Search" aria-label="Search">
@@ -16,17 +19,21 @@
 export default {
   name: "NavBar",
   data() {
-    return {};
+    return {
+      isLoading: false
+    };
   },
   methods: {
     logout() {
       const vm = this;
+      vm.isLoading = true;
       const api = `${process.env.APIPATH}/logout`;
       this.axios
         .post(api)
         .then(response => {
           // console.log(response);
           if (response.data.success === true) {
+            vm.isLoading = false;
             vm.$router.push("/login");
           }
         })
@@ -68,7 +75,7 @@ export default {
   box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.25);
 }
 
-.navbar-nav{
+.navbar-nav {
   cursor: pointer;
 }
 </style>
