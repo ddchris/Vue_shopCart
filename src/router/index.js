@@ -11,6 +11,12 @@ export default new Router({
       redirect: 'admin/products'
     },
     {
+      path: '/shoppingMall',
+      name: 'ShoppingMall',
+      component: () =>
+        import('@/components/pages/ShoppingMall')
+    },
+    {
       path: '/login',
       name: 'Login',
       component: () =>
@@ -29,7 +35,15 @@ export default new Router({
         meta: {
           requireAuth: true
         }
-      }, ]
+      }, {
+        path: 'coupons',
+        name: 'Coupon',
+        component: () =>
+          import('@/components/pages/Coupon'),
+        meta: {
+          requireAuth: true
+        }
+      }]
     },
     {
       path: '/',

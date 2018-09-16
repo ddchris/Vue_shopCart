@@ -15,13 +15,13 @@
           </router-link>
         </li>
         <li class="nav-item">
-          <router-link class="nav-link" to="/admin/products">
+          <router-link class="nav-link" to="/admin/orders">
             <i class="far fa-list-alt mr-1"></i>
             訂單列表
           </router-link>
         </li>
         <li class="nav-item">
-          <router-link class="nav-link" to="/admin/products">
+          <router-link class="nav-link" to="/admin/coupons">
             <i class="fas fa-money-check-alt"></i>
             優惠券
           </router-link>
