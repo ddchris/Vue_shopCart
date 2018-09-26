@@ -96,6 +96,7 @@
           <thead>
             <tr>
               <th class="text-center" scope="col">刪除</th>
+              <th class="text-center" scope="col">圖片</th>
               <th class="text-center" scope="col" width="240px">品名</th>
               <th class="text-center" scope="col" width="100px">數量</th>
               <th class="text-center" scope="col">單價</th>
@@ -107,6 +108,9 @@
                 <button type="button" class="btn btn-outline-danger">
                   <i @click="delItem(item.id)" class="far fa-trash-alt"></i>
                 </button>
+              </td>
+              <td class="text-center align-middle">
+                <img :src="item.product.imageUrl" width="100px" height="70px">
               </td>
               <td class="text-center align-middle">
                 {{item.product.title}}
@@ -399,7 +403,7 @@ export default {
         .post(api, { data: coupon })
         .then(response => {
           if (response.data.success) {
-            vm.coupon_code = '';
+            vm.coupon_code = "";
             vm.getCart();
             // console.log("response.data: ", response.data);
             // vm.getCart();
