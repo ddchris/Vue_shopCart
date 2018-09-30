@@ -151,6 +151,47 @@
     </div>
     <!-- 訂單表格 end -->
 
+    <!-- 訂單資料表格 start -->
+    <div v-if="showOrder" class="my-5 row justify-content-center">
+      <form class="col-md-6" @submit.prevent="createOrder()">
+        <div class="form-group">
+          <label for="useremail">Email</label>
+          <input v-validate="'required|email'" type="email" class="form-control" name="email" id="useremail"
+            v-model.trim="form.user.email" placeholder="請輸入 Email">
+          <span class="text-danger">{{errors.first('email')}}</span>
+        </div>
+
+        <div class="form-group">
+          <label for="username">收件人姓名</label>
+          <input :class="{'is-invalid': errors.has('name')}" v-validate="'required'" type="text" class="form-control" name="name" id="username"
+            v-model.trim="form.user.name" placeholder="輸入姓名">
+          <span v-if="errors.has('name')" class="text-danger">姓名不能留空</span>
+        </div>
+
+        <div class="form-group">
+          <label for="usertel">收件人電話</label>
+          <input data-vv-as="電話" name="tel" v-validate="'required|max:10|digits:10'" type="tel" class="form-control" id="usertel" v-model="form.user.tel" placeholder="請輸入電話">
+           <span class="text-danger">{{errors.first('tel')}}</span>
+        </div>
+
+        <div class="form-group">
+          <label for="useraddress">收件人地址</label>
+          <input v-validate="'required'" type="address" class="form-control" name="address" id="useraddress" v-model.trim="form.user.address"
+            placeholder="請輸入地址">
+          <span v-if="errors.has('address')" class="text-danger">地址不能留空</span>
+        </div>
+
+        <div class="form-group">
+          <label for="useraddress">留言</label>
+          <textarea name="" id="" class="form-control" cols="30" rows="10" v-model.trim="form.message"></textarea>
+        </div>
+        <div class="text-right">
+          <button class="btn btn-danger">送出訂單</button>
+        </div>
+      </form>
+    </div>
+    <!-- 訂單資料表格 end -->
+
     <!-- delCartModal start -->
     <div class="modal fade" id="delCartModal" tabindex="-1" role="dialog"
       aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -209,7 +250,17 @@ export default {
       finalTotal: 0,
       total: 0,
       showOrder: false,
-      coupon_code: ""
+      coupon_code: "",
+      form: {
+        user: {
+          name: "",
+          phone: "",
+          email: "",
+          tel: "",
+          address: ""
+        },
+        message: ""
+      }
     };
   },
   created() {
@@ -422,6 +473,36 @@ export default {
     },
     openDelCartModal() {
       $("#delCartModal").modal("show");
+    },
+    createOrder() {
+      const vm = this;
+      const api = `${process.env.APIPATH}/api/${process.env.CUSTOMPATH}/order`;
+      const order = vm.form;
+      vm.$validator.validate().then(result => {
+        if (!result) {
+          console.log("欄位不完整");
+          return 0;
+        } else {
+          vm.isLoading = true;
+          vm.axios
+            .post(api, { data: order })
+            .then(response => {
+              if (response.data.success) {
+                console.log("response.data: ", response.data);
+                vm.delAll();
+                vm.$router.push(`/customer_checkout/${response.data.orderId}`)
+              } else {
+                vm.$bus.$emit("message:push", response.data.message, "danger");
+              }
+              vm.isLoading = false;
+            })
+            .catch(error => {
+              console.log(error);
+              vm.$bus.$emit("message:push", "伺服器內部錯誤!!!", "danger");
+              vm.isLoading = false;
+            });
+        }
+      });
     }
   }
 };

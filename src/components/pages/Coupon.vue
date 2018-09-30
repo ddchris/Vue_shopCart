@@ -6,7 +6,7 @@
 
   <div class="row mt-2 topRow">
     <div class="mb-4">
-      <button @click="openCouponModal()" type="button" class="btn btn-lg btn-success">新增優惠券</button>
+      <button @click="openCouponModal({},'add')" type="button" class="btn btn-lg btn-success">新增優惠券</button>
     </div>
   </div>
   <div class="row ml-3 mr-1">
@@ -16,6 +16,7 @@
           <th scope="col">名稱</th>
           <th scope="col">折扣百分比</th>
           <th scope="col">到期日</th>
+          <th scope="col">優惠碼</th>
           <th scope="col">是否啟用</th>
           <th scope="col">編輯</th>
         </tr>
@@ -23,11 +24,12 @@
       <tbody>
         <tr v-for="coupon in coupons">
           <th scope="row">{{coupon.title}}</th>
-          <td>{{coupon.percent/10 + '%'}}</td>
+          <td>{{coupon.percent + '%'}}</td>
           <td>{{coupon.due_date}}</td>
+          <td>{{coupon.code}}</td>
           <td :class="{'text-success': coupon.is_enabled, 'text-danger': !coupon.is_enabled}">{{coupon.is_enabled ? '啟用':'未啟用'}}</td>
           <td>
-            <button @click="openCouponModal(coupon)" type="button" class="btn-sm btn-outline-primary sm">修改</button>
+            <button @click="openCouponModal(coupon, 'edit')" type="button" class="btn-sm btn-outline-primary sm">修改</button>
             <button @click="openDelCouponModal(coupon)" type="button" class="btn-sm btn-outline-danger">刪除</button>
           </td>
         </tr>
@@ -62,9 +64,18 @@
                 </div>
               </div>
               <div class="col-md-6 mb-3">
+                <label for="validationCustomUsername">優惠碼</label>
+                <div class="input-group">
+                  <input v-model="coupon.code" type="text" class="form-control" id="validationCustomUsername" placeholder="請輸入優惠碼" aria-describedby="inputGroupPrepend" required>
+                  <div class="invalid-feedback">
+                    Please choose a username.
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6 mb-3">
                 <label for="validationCustomUsername">到期日</label>
                 <div class="input-group">
-                  <input v-model="coupon['due_date']" type="text" class="form-control" id="validationCustomUsername" placeholder="請輸入到期日" aria-describedby="inputGroupPrepend" required>
+                  <input v-model="coupon['due_date']" type="date" class="form-control" id="validationCustomUsername" placeholder="請輸入到期日" aria-describedby="inputGroupPrepend" required>
                   <div class="invalid-feedback">
                     Please choose a username.
                   </div>
@@ -115,7 +126,7 @@
       </div>
     </div>
   </div>
-  <!-- delCouponModal start -->
+  <!-- delCouponModal end -->
 
   <!-- 分頁標籤 start -->
   <nav aria-label="Page navigation example">
@@ -146,21 +157,21 @@ export default {
   name: "Alert",
   data() {
     return {
+      type: 'add',
       pagination: {},
-      coupon: {
-        title: "",
-        is_enabled: "",
-        percent: "",
-        due_date: "",
-        code: ""
-      },
+      coupon: {},
       coupons: []
     };
   },
   methods: {
-    openCouponModal(coupon = {}) {
+    openCouponModal(coupon = {}, type) {
       if (coupon !== {}) {
         this.coupon = coupon;
+      }
+      if(type === 'add'){
+        this.type = 'add'
+      } else {
+        this.type = 'edit'
       }
       $("#couponModal").modal("show");
     },
@@ -182,12 +193,12 @@ export default {
       let method;
       let id;
       // 新增優惠券
-      if (vm.coupon === {}) {
+      if (this.type === 'add') {
         api = `${process.env.APIPATH}/api/${
           process.env.CUSTOMPATH
         }/admin/coupon`;
         method = "post";
-      } else if (vm.coupon.id) {
+      } else {
         // 修改優惠券
         method = "put";
         id = vm.coupon.id;
@@ -262,7 +273,7 @@ export default {
             vm.$bus.$emit("message:push", "刪除優惠券失敗", "danger");
           }
           vm.isLoading = false;
-          vm.getCoupons();
+          vm.getCoupons(vm.pagination.current_page);
         })
         .catch(error => {
           console.log(error);

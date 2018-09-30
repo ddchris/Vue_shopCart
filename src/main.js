@@ -6,6 +6,10 @@ import VueAxios from 'vue-axios';
 import Loading from 'vue-loading-overlay';
 import 'vue-loading-overlay/dist/vue-loading.min.css';
 import 'bootstrap';
+import VeeValidate from 'vee-validate';
+import zhTWVValidate from 'vee-validate/dist/locale/zh_TW';
+
+
 //第三方套件習慣往上放
 
 import App from './App';
@@ -13,6 +17,10 @@ import router from './router';
 import './bus';
 import currencyFilter from './filters/currency';
 //自己定義套件放下邊
+
+// 使用表單驗證套件
+VeeValidate.Validator.localize('zhTw', zhTWVValidate);
+Vue.use(VeeValidate);
 
 Vue.config.productionTip = false;
 Vue.use(VueAxios, axios);

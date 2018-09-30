@@ -28,22 +28,34 @@ export default new Router({
       component: () =>
         import('@/components/Dashboard'),
       children: [{
-        path: 'products',
-        name: 'Products',
-        component: () =>
-          import('@/components/pages/Products'),
-        meta: {
-          requireAuth: true
-        }
-      }, {
-        path: 'coupons',
-        name: 'Coupon',
-        component: () =>
-          import('@/components/pages/Coupon'),
-        meta: {
-          requireAuth: true
-        }
-      }]
+          path: 'products',
+          name: 'Products',
+          component: () =>
+            import('@/components/pages/Products'),
+          meta: {
+            requireAuth: true
+          }
+        },
+        {
+          path: 'coupons',
+          name: 'Coupon',
+          component: () =>
+            import('@/components/pages/Coupon'),
+          meta: {
+            requireAuth: true
+          }
+        },
+        {
+          path: 'orders',
+          name: 'Orders',
+          component: () =>
+            import('@/components/pages/Orders'),
+          meta: {
+            requireAuth: true
+          }
+        },
+
+      ]
     },
     {
       path: '/',
@@ -51,11 +63,18 @@ export default new Router({
       component: () =>
         import('@/components/Dashboard'),
       children: [{
-        path: 'customer_orders',
-        name: 'CustomerOrders',
-        component: () =>
-          import('@/components/pages/CustomerOrders')
-      }, ]
+          path: 'customer_orders',
+          name: 'CustomerOrders',
+          component: () =>
+            import('@/components/pages/CustomerOrders')
+        },
+        {
+          path: 'customer_checkout/:orderId',
+          name: 'CustomerCheckout',
+          component: () =>
+            import('@/components/pages/CustomerCheckout')
+        },
+      ]
     },
 
   ]
