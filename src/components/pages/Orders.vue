@@ -65,7 +65,7 @@ export default {
   name: "Alert",
   data() {
     return {
-      type: "add",
+      type: 'add',
       pagination: {},
       coupon: {},
       orders: []
@@ -82,18 +82,7 @@ export default {
         .get(api)
         .then(response => {
           if (response.data.success) {
-            console.log("response.data: ", response.data);
-            // timestamp 轉換日期
-            response.data.orders.forEach(item => {
-              let date = new Date(item.create_at);
-              let Y = date.getFullYear() + "-";
-              let M =
-                (date.getMonth() + 1 < 10
-                  ? "0" + (date.getMonth() + 1)
-                  : date.getMonth() + 1) + "-";
-              let D = date.getDate() + " ";
-              item.create_at = Y+M+D
-            });
+            // console.log("response.data: ", response.data);
             vm.orders = response.data.orders;
             vm.pagination = response.data.pagination;
           } else {
@@ -107,7 +96,7 @@ export default {
           vm.$bus.$emit("message:push", "伺服器內部錯誤!!!", "danger");
           vm.isLoading = false;
         });
-    }
+    },
   },
   created() {
     this.getOrders();

@@ -35,7 +35,7 @@ export default {
     return {
       user: {
         username: "",
-        password: ""
+        password: "",
       },
       isLoading: false
     };

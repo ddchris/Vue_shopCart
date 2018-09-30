@@ -157,11 +157,10 @@ export default {
   name: "Alert",
   data() {
     return {
-      type: "add",
+      type: 'add',
       pagination: {},
       coupon: {},
-      coupons: [],
-      isLoading: false
+      coupons: []
     };
   },
   methods: {
@@ -169,10 +168,10 @@ export default {
       if (coupon !== {}) {
         this.coupon = coupon;
       }
-      if (type === "add") {
-        this.type = "add";
+      if(type === 'add'){
+        this.type = 'add'
       } else {
-        this.type = "edit";
+        this.type = 'edit'
       }
       $("#couponModal").modal("show");
     },
@@ -194,7 +193,7 @@ export default {
       let method;
       let id;
       // 新增優惠券
-      if (this.type === "add") {
+      if (this.type === 'add') {
         api = `${process.env.APIPATH}/api/${
           process.env.CUSTOMPATH
         }/admin/coupon`;

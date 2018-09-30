@@ -117,7 +117,7 @@
                 <div class="text-success" v-if="item.coupon">已套用優惠券</div>
               </td>
               <td class="text-center align-middle">{{item.qty}}</td>
-              <td class="text-center align-middle">{{item.final_total.toFixed(2)}}</td>
+              <td class="text-center align-middle">{{item.final_total}}</td>
             </tr>
             <tr>
               <td class="text-center align-middle">
@@ -129,13 +129,13 @@
               </td>
               <td class="text-center align-middle"></td>
               <td class="text-center align-middle">總計</td>
-              <td class="text-center align-middle"><strong>{{total.toFixed(2)}}</strong></td>
+              <td class="text-center align-middle"><strong>{{total}}</strong></td>
             </tr>
             <tr v-if="finalTotal !== total">
               <td class="text-center align-middle"></td>
               <td class="text-center align-middle"></td>
               <td class="text-center text-success align-middle">折扣價</td>
-              <td class="text-center text-success align-middle"><strong>{{finalTotal.toFixed(2)}}</strong></td>
+              <td class="text-center text-success align-middle"><strong>{{finalTotal}}</strong></td>
             </tr>
           </tbody>
         </table>
@@ -375,6 +375,7 @@ export default {
             } else {
               vm.carts = [];
               vm.showOrder = false;
+              console.log("here");
             }
           } else {
             console.log("取得購物車失敗");
