@@ -9,7 +9,6 @@ import 'bootstrap';
 import VeeValidate from 'vee-validate';
 import zhTWVValidate from 'vee-validate/dist/locale/zh_TW';
 
-
 //第三方套件習慣往上放
 
 import App from './App';
@@ -68,3 +67,5 @@ function checkLogin(next) {
       console.log(error);
     });
 }
+
+// new Vue({ render: h => h(App) }).$mount('#app');
