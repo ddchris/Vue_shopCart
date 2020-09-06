@@ -16,25 +16,27 @@ import App from './App';
 import router from './router';
 import './bus';
 import currencyFilter from './filters/currency';
+import store from './store'
 //自己定義套件放下邊
 
 // 使用表單驗證套件
 VeeValidate.Validator.localize('zhTw', zhTWVValidate);
 Vue.use(VeeValidate);
 
-Vue.config.productionTip = false;
 Vue.use(VueAxios, axios);
 //全域使用第三方 Loading 套件
 Vue.component('Loading', Loading);
 //全域使用 filter,前面輸入自定義名稱,後面帶入function
 Vue.filter('currency', currencyFilter)
 
+Vue.config.productionTip = false;
 axios.defaults.withCredentials = true;
 
 /* eslint-disable no-new */
 new Vue({
   el: '#app',
   router,
+  store,
   components: {
     App
   },

@@ -7,18 +7,39 @@
 
     <!-- 表單可以監聽submit事件並取消預設 -->
     <form class="form-signin" @submit.prevent="login">
-      <img class="mb-4" src="./../../assets/imgs/login.png" alt="" width="86" height="86">
+      <img
+        class="mb-4"
+        src="./../../assets/imgs/login.png"
+        alt=""
+        width="86"
+        height="86"
+      />
       <h1 class="h3 mb-3 font-weight-normal">請輸入登入資訊</h1>
       <label for="inputEmail" class="sr-only">Email address</label>
-      <input type="email" v-model="user.username" id="inputEmail" class="form-control" placeholder="Email address" required autofocus>
+      <input
+        type="email"
+        v-model="user.username"
+        id="inputEmail"
+        class="form-control"
+        placeholder="Email address"
+        required
+        autofocus
+      />
       <label for="inputPassword" class="sr-only">Password</label>
-      <input type="password" v-model="user.password" id="inputPassword" class="form-control" placeholder="Password" required>
+      <input
+        type="password"
+        v-model="user.password"
+        id="inputPassword"
+        class="form-control"
+        placeholder="Password"
+        required
+      />
       <div class="checkbox mb-3">
-        <label>
-          <input type="checkbox" value="remember-me"> 記住我
-        </label>
+        <label> <input type="checkbox" value="remember-me" /> 記住我 </label>
       </div>
-      <button class="btn btn-lg btn-primary btn-block" type="submit">立即登入</button>
+      <button class="btn btn-lg btn-primary btn-block" type="submit">
+        立即登入
+      </button>
       <p class="mt-5 mb-3 text-muted">&copy; 2017-2018</p>
     </form>
   </div>
@@ -26,25 +47,33 @@
 
 <script>
 import Alert from "../AlertMessage";
+import { mapState, mapMutations } from 'vuex'
 export default {
   name: "Login",
   components: {
     Alert
   },
-  data() {
+  data () {
     return {
       user: {
         username: "",
         password: "",
       },
-      isLoading: false
     };
   },
+  computed: {
+    ...mapState([
+      'isLoading'
+    ]),
+  },
   methods: {
-    login() {
+    ...mapMutations([
+      'LOADING'
+    ]),
+    login () {
       const vm = this;
       const api = `${process.env.APIPATH}/admin/signin`;
-      vm.isLoading = true;
+      vm.LOADING(true);
       this.axios
         .post(api, vm.user)
         .then(response => {
@@ -53,12 +82,12 @@ export default {
           } else {
             vm.$bus.$emit("message:push", "帳號密碼錯誤,請重新輸入", "danger");
           }
-          vm.isLoading = false;
+          vm.LOADING(false);
         })
-        .catch(function(error) {
+        .catch(function (error) {
           console.log(error);
           vm.$bus.$emit("message:push", "伺服器內部錯誤", "danger");
-          vm.isLoading = false;
+          vm.LOADING(false);
         });
     }
   }
@@ -102,12 +131,12 @@ body {
 .form-signin .form-control:focus {
   z-index: 2;
 }
-.form-signin input[type="email"] {
+.form-signin input[type='email'] {
   margin-bottom: -1px;
   border-bottom-right-radius: 0;
   border-bottom-left-radius: 0;
 }
-.form-signin input[type="password"] {
+.form-signin input[type='password'] {
   margin-bottom: 10px;
   border-top-left-radius: 0;
   border-top-right-radius: 0;

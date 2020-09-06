@@ -14,7 +14,9 @@
           <tbody>
             <tr v-for="item in order.products" :key="item.id">
               <td class="align-middle">{{ item.product.title }}</td>
-              <td class="align-middle">{{ item.qty }}/{{ item.product.unit }}</td>
+              <td class="align-middle">
+                {{ item.qty }}/{{ item.product.unit }}
+              </td>
               <td class="align-middle text-right">{{ item.final_total }}</td>
             </tr>
           </tbody>
@@ -59,16 +61,15 @@
       </form>
     </div>
   </div>
-
 </template>
 
 <script>
 import $ from "jquery";
+import { mapState, mapMutations } from 'vuex'
 export default {
   name: "CustomCheckout",
-  data() {
+  data () {
     return {
-      isLoading: false,
       pagination: {},
       order: {
         user: {}
@@ -76,12 +77,14 @@ export default {
     };
   },
   methods: {
-    getOrder() {
+    ...mapMutations([
+      'LOADING'
+    ]),
+    getOrder () {
       const vm = this;
-      vm.isLoading = true;
-      const api = `${process.env.APIPATH}/api/${process.env.CUSTOMPATH}/order/${
-        this.orderId
-      }`;
+      vm.LOADING(true);
+      const api = `${process.env.APIPATH}/api/${process.env.CUSTOMPATH}/order/${this.orderId
+        }`;
       vm.axios
         .get(api)
         .then(response => {
@@ -92,24 +95,23 @@ export default {
             // console.log(response.data.message);
             vm.$bus.$emit("message:push", response.data.message, "danger");
           }
-          vm.isLoading = false;
+          vm.LOADING(false);
         })
         .catch(error => {
           console.log(error);
           vm.$bus.$emit("message:push", "伺服器內部錯誤!!!", "danger");
-          vm.isLoading = false;
+          vm.LOADING(false);
         });
     },
-    payOrder() {
+    payOrder () {
       const vm = this;
-      vm.isLoading = true;
-      const api = `${process.env.APIPATH}/api/${process.env.CUSTOMPATH}/pay/${
-        this.orderId
-      }`;
+      vm.LOADING(true);
+      const api = `${process.env.APIPATH}/api/${process.env.CUSTOMPATH}/pay/${this.orderId
+        }`;
       vm.axios
         .post(api)
         .then(response => {
-          vm.isLoading = false;
+          vm.LOADING(false);
           if (response.data.success) {
             // console.log("response.data: ", response.data);
             vm.order.is_paid = true;
@@ -125,14 +127,19 @@ export default {
         .catch(error => {
           console.log(error);
           vm.$bus.$emit("message:push", "伺服器內部錯誤!!!", "danger");
-          vm.isLoading = false;
+          vm.LOADING(false);
         });
     }
   },
-  created() {
+  created () {
     // 對應路由內自定義變數名稱
     this.orderId = this.$route.params.orderId;
     this.getOrder();
-  }
+  },
+  computed: {
+    ...mapState([
+      'isLoading'
+    ]),
+  },
 };
 </script>

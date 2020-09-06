@@ -16,24 +16,31 @@
 </template>
 
 <script>
+import { mapState, mapMutations } from 'vuex'
 export default {
   name: "NavBar",
   data() {
     return {
-      isLoading: false
     };
   },
+  computed: {
+    ...mapState([
+      'isLoading'
+    ]),
+  },
   methods: {
+    ...mapMutations([
+      'LOADING'
+    ]),
     logout() {
       const vm = this;
-      vm.isLoading = true;
+      vm.LOADING(true)
       const api = `${process.env.APIPATH}/logout`;
       this.axios
         .post(api)
         .then(response => {
-          // console.log(response);
           if (response.data.success === true) {
-            vm.isLoading = false;
+            vm.LOADING(false)
             vm.$router.push("/login");
           }
         })
