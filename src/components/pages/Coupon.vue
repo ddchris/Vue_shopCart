@@ -1,9 +1,5 @@
 <template>
   <div>
-    <!-- Loading 套件 start-->
-    <loading :active.sync="isLoading"></loading>
-    <!-- Loading 套件 end-->
-
     <div class="row mt-2 topRow">
       <div class="mb-4">
         <button
@@ -27,8 +23,8 @@
             <th scope="col">編輯</th>
           </tr>
         </thead>
-        <tbody>
-          <tr v-for="coupon in coupons">
+        <tbody v-show="!isLoading && coupons && coupons.length>=1">
+          <tr v-for="coupon in coupons" :key="coupon.id">
             <th scope="row">{{ coupon.title }}</th>
             <td>{{ coupon.percent + '%' }}</td>
             <td>{{ coupon.due_date }}</td>
@@ -60,6 +56,22 @@
           </tr>
         </tbody>
       </table>
+      <div class="loadingFrame" v-if="isLoading">
+        <loading
+          :active.sync="notFullPageLoading"
+          :is-full-page="false"
+          :background-color="'#fff'"
+          :loader="'dots'"
+          :color="'green'"
+          :height="80"
+          :width="80"
+        ></loading>
+      </div>
+    </div>
+
+    <div class="noData" v-show="!isLoading && isNoData">
+      <img src="./../../assets/imgs/noData.png">
+      <span>暫無資料！</span>
     </div>
     <!-- Modal start-->
     <div
@@ -73,7 +85,9 @@
       <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="exampleModalCenterTitle">新增優惠券</h5>
+            <h5 class="modal-title" id="exampleModalCenterTitle">
+              {{ tip }}優惠券
+            </h5>
             <button
               type="button"
               class="close"
@@ -228,11 +242,11 @@
     <!-- delCouponModal end -->
 
     <!-- 分頁標籤 start -->
-    <nav aria-label="Page navigation example">
+    <nav aria-label="Page navigation example" v-show="!isNoData">
       <ul class="pagination mt-2">
-        <li class="page-item" :class="{ disabled: !pagination.has_pre }">
+        <li class="page-item" :class="{ disabled: !pagination.has_pre || isLoading }">
           <a
-            @click.prevent="getCoupons(pagination.current_page - 1)"
+            @click.prevent="getCoupons(pagination.current_page - 1, true)"
             class="page-link"
             href="#"
             aria-label="Previous"
@@ -244,17 +258,17 @@
         <!-- 利用 total_pages 數字做 v-for 迴圈 -->
         <li
           class="page-item"
-          :class="{ active: pagination.current_page === page }"
+          :class="{ active: pagination.current_page === page, disabled: isLoading }"
           v-for="page in pagination.total_pages"
           :key="page"
         >
-          <a class="page-link" href="#" @click.prevent="getCoupons(page)">{{
+          <a class="page-link" href="#" @click.prevent="getCoupons(page, true)">{{
             page
           }}</a>
         </li>
-        <li class="page-item" :class="{ disabled: !pagination.has_next }">
+        <li class="page-item" :class="{ disabled: !pagination.has_next || isLoading }">
           <a
-            @click.prevent="getCoupons(pagination.current_page + 1)"
+            @click.prevent="getCoupons(pagination.current_page + 1, true)"
             class="page-link"
             href="#"
             aria-label="Next"
@@ -270,150 +284,169 @@
 </template>
 
 <script>
-import $ from "jquery";
-import { mapState, mapMutations } from 'vuex'
+import $ from "jquery"
+import { mapState, mapMutations, mapActions } from 'vuex'
 export default {
   name: "Alert",
   data () {
     return {
       type: 'add',
-      pagination: {},
       coupon: {},
-      coupons: []
-    };
+      apiData: {
+        url: '',
+        method: '',
+        data: ''
+      }
+    }
+  },
+  created () {
+    this.getCoupons()
+  },
+  computed: {
+    ...mapState([
+      'isLoading',
+      'isFullPage',
+      'coupons',
+      'pagination'
+    ]),
+    tip () {
+      return this.type === 'add' ? '新增' : '修改'
+    },
+    notFullPageLoading () {
+      return this.isLoading && !this.isFullPage
+    },
+    isNoData(){
+      return !this.coupons || this.coupons && this.coupons.length<1
+    }
   },
   methods: {
     ...mapMutations([
-      'LOADING'
+      'SETLOADING',
+      'ADDCOUPONS',
+      'DELCOUPON',
+    ]),
+    ...mapActions([
+      'GetCoupons',
+      'DelCoupon',
+      'AddCoupon',
     ]),
     openCouponModal (coupon = {}, type) {
       if (coupon !== {}) {
-        this.coupon = coupon;
+        this.coupon = coupon
       }
       if (type === 'add') {
         this.type = 'add'
       } else {
         this.type = 'edit'
       }
-      $("#couponModal").modal("show");
+      $("#couponModal").modal("show")
     },
     closeCouponModal () {
-      $("#couponModal").modal("hide");
+      $("#couponModal").modal("hide")
     },
     closeDelCouponModal () {
-      $("#delCouponModal").modal("hide");
+      $("#delCouponModal").modal("hide")
     },
     openDelCouponModal (coupon = {}) {
       if (coupon !== {}) {
-        this.coupon = coupon;
+        this.coupon = coupon
       }
-      $("#delCouponModal").modal("show");
+      $("#delCouponModal").modal("show")
     },
     addCoupon () {
-      const vm = this;
-      let api;
-      let method;
-      let id;
-      // 新增優惠券
-      if (this.type === 'add') {
-        api = `${process.env.APIPATH}/api/${process.env.CUSTOMPATH
-          }/admin/coupon`;
-        method = "post";
-      } else {
-        // 修改優惠券
-        method = "put";
-        id = vm.coupon.id;
-        api = `${process.env.APIPATH}/api/${process.env.CUSTOMPATH
-          }/admin/coupon/${id}`;
+      if(this.isLoading) return
+      const vm = this
+      let api = this.type === 'add' ? `/admin/coupon` : `/admin/coupon/${vm.coupon.id}`
+      let method = this.type === 'add' ? 'post' : 'put'
+      let apiData = {
+        url: api,
+        method,
+        data: { data: vm.coupon }
       }
-      vm.LOADING(true);
-      vm.axios[method](api, { data: vm.coupon })
-        .then(response => {
-          if (response.data.success) {
-            // console.log("response.data: ", response.data);
-          } else {
-            console.log("新增優惠券失敗");
-            // console.log("response.data: ", response.data);
-            vm.$bus.$emit("message:push", "新增優惠券失敗", "danger");
-          }
-          vm.getCoupons();
-          vm.LOADING(false);
-          vm.closeCouponModal();
-          vm.coupon = {};
-        })
+      vm.closeCouponModal()
+      vm.SETLOADING({ isLoading: true, isFullPage: false })
+      vm.AddCoupon(apiData).then(res => {
+        console.log('then:')
+        console.log('isLoading:', this.isLoading)
+        console.log('isFullPage:', this.isFullPage)
+        let type = res.success ? 'success' : 'danger'
+        vm.$bus.$emit('message:push', res.message, type)
+        this.ADDCOUPONS(vm.coupon)
+        vm.coupon = {}
+      })
         .catch(error => {
-          console.log(error);
-          vm.$bus.$emit("message:push", "伺服器內部錯誤!!!", "danger");
-          vm.getCoupons();
-          vm.LOADING(false);
-          vm.closeCouponModal();
-          vm.coupon = {};
-        });
+          console.log(error)
+          vm.$bus.$emit("message:push", error.message, "danger")
+          vm.closeCouponModal()
+          vm.getCoupons()
+          vm.coupon = {}
+        })
+      // vm.axios[method](api, { data: vm.coupon })
+      //   .then(response => {
+      //     if (response.data.success) {
+      //       // console.log("response.data: ", response.data)
+      //     } else {
+      //       console.log("新增優惠券失敗")
+      //       // console.log("response.data: ", response.data)
+      //       vm.$bus.$emit("message:push", "新增優惠券失敗", "danger")
+      //     }
+      //     vm.getCoupons()
+      //     vm.SETLOADING(false)
+      //     vm.closeCouponModal()
+      //     vm.coupon = {}
+      //   })
+      //   .catch(error => {
+      //     console.log(error)
+      //     vm.$bus.$emit("message:push", "伺服器內部錯誤!!!", "danger")
+      //     vm.getCoupons()
+      //     vm.SETLOADING(false)
+      //     vm.closeCouponModal()
+      //     vm.coupon = {}
+      //   })
     },
-    getCoupons (page = 1) {
-      const vm = this;
-      vm.LOADING(true);
-      const api = `${process.env.APIPATH}/api/${process.env.CUSTOMPATH
-        }/admin/coupons?page=${page}`;
-      vm.axios
-        .get(api)
-        .then(response => {
-          if (response.data.success) {
-            // console.log("response.data: ", response.data);
-            vm.coupons = response.data.coupons;
-            vm.pagination = response.data.pagination;
-          } else {
-            console.log("取得優惠券列表失敗");
-            vm.$bus.$emit("message:push", "取得優惠券列表失敗", "danger");
-          }
-          vm.LOADING(false);
-        })
-        .catch(error => {
-          console.log(error);
-          vm.$bus.$emit("message:push", "伺服器內部錯誤!!!", "danger");
-          vm.LOADING(false);
-        });
+    getCoupons (page = 1, pagination = false) {
+      if (this.isLoading || pagination && this.pagination.total_pages === 1) return
+      const vm = this
+      let apiData = {
+        url: `/admin/coupons?page=${page}`,
+        method: 'get',
+        data: vm.coupon
+      }
+      vm.SETLOADING({ isLoading: true, isFullPage: false })
+      vm.GetCoupons(apiData).then(data => {
+        let msgType = data.success ? 'success' : 'danger'
+        if(data.message) vm.$bus.$emit("message:push", data.message, msgType)
+      }).catch(error => {
+        vm.$bus.$emit("message:push", error.message, "danger")
+        vm.SETLOADING({ isLoading: false, isFullPage: false })
+      })
     },
     delCoupon () {
-      const vm = this;
-      vm.LOADING(true);
-      let id = vm.coupon.id;
-      const api = `${process.env.APIPATH}/api/${process.env.CUSTOMPATH
-        }/admin/coupon/${id}`;
-      vm.axios
-        .delete(api)
-        .then(response => {
-          vm.closeDelCouponModal();
-          if (response.data.success) {
-            console.log("response.data: ", response.data);
-          } else {
-            console.log("刪除優惠券失敗");
-            vm.$bus.$emit("message:push", "刪除優惠券失敗", "danger");
-          }
-          vm.LOADING(false);
-          vm.getCoupons(vm.pagination.current_page);
-        })
-        .catch(error => {
-          console.log(error);
-          vm.$bus.$emit("message:push", "伺服器內部錯誤!!!", "danger");
-          vm.LOADING(false);
-          vm.getCoupons();
-          vm.closeDelCouponModal();
-        });
+      if(this.isLoading) return
+      const vm = this
+      let apiData = {
+        url: `/admin/coupon/${vm.coupon.id}`,
+        method: 'delete'
+      }
+      vm.SETLOADING({ isLoading: true, isFullPage: false })
+      vm.closeDelCouponModal()
+      vm.DelCoupon(apiData).then(res => {
+        vm.DELCOUPON(vm.coupon.id)
+        if (res.success) {
+          vm.$bus.$emit("message:push", res.message, "success")
+        } else {
+          vm.$bus.$emit("message:push", res.message, "danger")
+        }
+      }).catch(error => {
+        vm.getCoupons()
+        vm.$bus.$emit("message:push", error.message, "danger")
+      })
     }
-  },
-  created () {
-    this.getCoupons();
-  },
-  computed: {
-    ...mapState([
-      'isLoading'
-    ]),
-  },
-};
+  }
+}
 </script>
 
-<style scope>
+<style lang="scss" scope>
 html {
   font-size: 14px;
 }

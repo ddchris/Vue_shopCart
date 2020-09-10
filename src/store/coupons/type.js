@@ -1,0 +1,3 @@
+export const GETCOUPONS = 'GETCOUPONS'
+export const ADDCOUPONS = 'ADDCOUPONS'
+export const DELCOUPON = 'DELCOUPON'

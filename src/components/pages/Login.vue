@@ -35,7 +35,7 @@
         required
       />
       <div class="checkbox mb-3">
-        <label> <input type="checkbox" value="remember-me" /> 記住我 </label>
+        <label> <input type="checkbox" value="remember-me" v-model="isRemember" /> 記住我 </label>
       </div>
       <button class="btn btn-lg btn-primary btn-block" type="submit">
         立即登入
@@ -46,7 +46,7 @@
 </template>
 
 <script>
-import Alert from "../AlertMessage";
+import Alert from "../AlertMessage"
 import { mapState, mapMutations } from 'vuex'
 export default {
   name: "Login",
@@ -59,6 +59,7 @@ export default {
         username: "",
         password: "",
       },
+      isRemember: false
     };
   },
   computed: {
@@ -68,30 +69,39 @@ export default {
   },
   methods: {
     ...mapMutations([
-      'LOADING'
+      'SETLOADING'
     ]),
+    setIsRemember () {
+      if(this.isRemember) { localStorage.setItem('user', JSON.stringify(this.user)); return}
+      localStorage.removeItem('user')
+    },
     login () {
-      const vm = this;
-      const api = `${process.env.APIPATH}/admin/signin`;
-      vm.LOADING(true);
+      const vm = this
+      const api = `${process.env.APIPATH}/admin/signin`
+      this.setIsRemember()
+      vm.SETLOADING(true)
       this.axios
         .post(api, vm.user)
         .then(response => {
           if (response.data.success) {
-            vm.$router.push("/admin/products");
+            vm.$router.push("/admin/products")
           } else {
-            vm.$bus.$emit("message:push", "帳號密碼錯誤,請重新輸入", "danger");
+            vm.$bus.$emit("message:push", "帳號密碼錯誤,請重新輸入", "danger")
           }
-          vm.LOADING(false);
+          vm.SETLOADING(false)
         })
         .catch(function (error) {
-          console.log(error);
-          vm.$bus.$emit("message:push", "伺服器內部錯誤", "danger");
-          vm.LOADING(false);
-        });
+          console.log(error)
+          vm.$bus.$emit("message:push", "伺服器內部錯誤", "danger")
+          vm.SETLOADING(false)
+        })
     }
+  },
+  created() {
+    console.log('localStorage.getItem', localStorage.getItem('user'))
+    if (localStorage.getItem('user')) this.user = JSON.parse(localStorage.getItem('user'))
   }
-};
+}
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->

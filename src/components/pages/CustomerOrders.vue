@@ -1,9 +1,5 @@
 <template>
   <div>
-    <!-- Loading 套件 start-->
-    <loading :active.sync="isLoading"></loading>
-    <!-- Loading 套件 end-->
-
     <!-- 商品內容 start -->
     <!-- 外層加上 BS4 格線用 div -->
     <div class="row mt-4">
@@ -28,10 +24,10 @@
             <p class="card-text">{{ item.description }}</p>
             <div class="d-flex justify-content-between align-items-baseline">
               <del class="h6"
-                >原價&nbsp {{ item.origin_price | currency }}&nbsp
+                >原價 &nbsp; {{ item.origin_price | currency }} &nbsp;
               </del>
               <div class="h5">
-                現在只要&nbsp{{ item.price | currency }}&nbsp
+                現在只要 &nbsp; {{ item.price | currency }} &nbsp;
               </div>
             </div>
           </div>
@@ -351,7 +347,7 @@
 </template>
 
 <script>
-import $ from "jquery";
+import $ from "jquery"
 import { mapState, mapMutations } from 'vuex'
 export default {
   data () {
@@ -391,11 +387,11 @@ export default {
         },
         message: ""
       }
-    };
+    }
   },
   created () {
-    this.getProducts();
-    this.getCart();
+    this.getProducts()
+    this.getCart()
   },
   computed: {
     ...mapState([
@@ -404,241 +400,241 @@ export default {
   },
   methods: {
     ...mapMutations([
-      'LOADING'
+      'SETLOADING'
     ]),
     getProducts () {
-      const vm = this;
-      vm.LOADING(true);
+      const vm = this
+      vm.SETLOADING(true)
       const api = `${process.env.APIPATH}/api/${process.env.CUSTOMPATH
-        }/products/all`;
+        }/products/all`
       vm.axios
         .get(api)
         .then(response => {
           if (response.data.success) {
-            // console.log("response.data: ", response.data);
-            vm.products = response.data.products;
-            vm.pagination = response.data.pagination;
+            // console.log("response.data: ", response.data)
+            vm.products = response.data.products
+            vm.pagination = response.data.pagination
           } else {
-            console.log("取得產品失敗");
-            vm.$bus.$emit("message:push", "取得產品失敗", "danger");
+            console.log("取得產品失敗")
+            vm.$bus.$emit("message:push", "取得產品失敗", "danger")
           }
-          vm.LOADING(false);
+          vm.SETLOADING(false)
         })
         .catch(error => {
-          console.log(error);
-          vm.$bus.$emit("message:push", "伺服器內部錯誤!", "danger");
-          vm.LOADING(false);
-        });
+          console.log(error)
+          vm.$bus.$emit("message:push", "伺服器內部錯誤!", "danger")
+          vm.SETLOADING(false)
+        })
     },
     getProduct (id) {
-      const vm = this;
-      vm.status.loadingItem = id;
+      const vm = this
+      vm.status.loadingItem = id
       const api = `${process.env.APIPATH}/api/${process.env.CUSTOMPATH
-        }/product/${id}`;
+        }/product/${id}`
       vm.axios
         .get(api)
         .then(response => {
           if (response.data.success) {
-            // console.log("response.data: ", response.data.product);
-            vm.tempProduct = response.data.product;
-            vm.tempProduct.num = 1;
+            // console.log("response.data: ", response.data.product)
+            vm.tempProduct = response.data.product
+            vm.tempProduct.num = 1
           } else {
-            console.log("取得產品失敗");
-            vm.$bus.$emit("message:push", "取得產品失敗", "danger");
+            console.log("取得產品失敗")
+            vm.$bus.$emit("message:push", "取得產品失敗", "danger")
           }
-          $("#productModal").modal("show");
-          vm.status.loadingItem = "";
+          $("#productModal").modal("show")
+          vm.status.loadingItem = ""
         })
         .catch(error => {
-          console.log(error);
-          vm.$bus.$emit("message:push", "伺服器內部錯誤", "danger");
-          vm.status.loadingItem = "";
-        });
+          console.log(error)
+          vm.$bus.$emit("message:push", "伺服器內部錯誤", "danger")
+          vm.status.loadingItem = ""
+        })
     },
     addCart (id, qty = 1, byModal) {
-      const vm = this;
+      const vm = this
       if (byModal) {
-        vm.LOADING(true);
+        vm.SETLOADING(true)
       } else {
-        vm.status.addItem = id;
+        vm.status.addItem = id
       }
-      const api = `${process.env.APIPATH}/api/${process.env.CUSTOMPATH}/cart`;
+      const api = `${process.env.APIPATH}/api/${process.env.CUSTOMPATH}/cart`
       const cart = {
         product_id: id,
         qty
-      };
+      }
       vm.axios
         .post(api, { data: cart })
         .then(response => {
           if (response.data.success) {
-            // console.log("response.data: ", response.data);
+            // console.log("response.data: ", response.data)
           } else {
-            console.log("取得產品失敗");
-            vm.$bus.$emit("message:push", "加入購物車失敗", "danger");
+            console.log("取得產品失敗")
+            vm.$bus.$emit("message:push", "加入購物車失敗", "danger")
           }
-          vm.status.addItem = "";
-          $("#productModal").modal("hide");
-          vm.getCart();
+          vm.status.addItem = ""
+          $("#productModal").modal("hide")
+          vm.getCart()
         })
         .catch(error => {
-          console.log(error);
-          vm.$bus.$emit("message:push", "伺服器內部錯誤!!", "danger");
-          vm.status.addItem = "";
-          vm.status.loadingItem = "";
-          $("#productModal").modal("hide");
-          vm.getCart();
-        });
+          console.log(error)
+          vm.$bus.$emit("message:push", "伺服器內部錯誤!!", "danger")
+          vm.status.addItem = ""
+          vm.status.loadingItem = ""
+          $("#productModal").modal("hide")
+          vm.getCart()
+        })
     },
     getCart () {
-      const vm = this;
-      vm.LOADING(true);
-      const api = `${process.env.APIPATH}/api/${process.env.CUSTOMPATH}/cart`;
+      const vm = this
+      vm.SETLOADING(true)
+      const api = `${process.env.APIPATH}/api/${process.env.CUSTOMPATH}/cart`
       vm.axios
         .get(api)
         .then(response => {
           if (response.data.success) {
-            // console.log("response.data.carts: ", response.data.data);
+            // console.log("response.data.carts: ", response.data.data)
             if (
               response.data.data.carts &&
               response.data.data.carts.length !== 0
             ) {
-              vm.carts = [...response.data.data.carts];
-              vm.total = response.data.data.total;
-              vm.finalTotal = response.data.data.final_total;
-              vm.showOrder = true;
-              console.log("vm.carts", response.data.data);
+              vm.carts = [...response.data.data.carts]
+              vm.total = response.data.data.total
+              vm.finalTotal = response.data.data.final_total
+              vm.showOrder = true
+              console.log("vm.carts", response.data.data)
             } else {
-              vm.carts = [];
-              vm.showOrder = false;
-              console.log("here");
+              vm.carts = []
+              vm.showOrder = false
+              console.log("here")
             }
           } else {
-            console.log("取得購物車失敗");
-            vm.showOrder = false;
-            vm.$bus.$emit("message:push", "取得得購物車失敗", "danger");
+            console.log("取得購物車失敗")
+            vm.showOrder = false
+            vm.$bus.$emit("message:push", "取得得購物車失敗", "danger")
           }
-          vm.LOADING(false);
+          vm.SETLOADING(false)
         })
         .catch(error => {
-          console.log(error);
-          vm.$bus.$emit("message:push", "伺服器內部錯誤!!!", "danger");
-          vm.showOrder = false;
-          vm.LOADING(false);
-        });
+          console.log(error)
+          vm.$bus.$emit("message:push", "伺服器內部錯誤!!!", "danger")
+          vm.showOrder = false
+          vm.SETLOADING(false)
+        })
     },
     delItem (id) {
-      const vm = this;
-      vm.LOADING(true);
+      const vm = this
+      vm.SETLOADING(true)
       const api = `${process.env.APIPATH}/api/${process.env.CUSTOMPATH
-        }/cart/${id}`;
+        }/cart/${id}`
       vm.axios
         .delete(api)
         .then(response => {
           if (response.data.success) {
-            // console.log("response.data: ", response.data);
-            vm.getCart();
+            // console.log("response.data: ", response.data)
+            vm.getCart()
           } else {
-            console.log("刪除商品失敗");
-            vm.$bus.$emit("message:push", "刪除商品失敗", "danger");
+            console.log("刪除商品失敗")
+            vm.$bus.$emit("message:push", "刪除商品失敗", "danger")
           }
-          vm.LOADING(false);
+          vm.SETLOADING(false)
         })
         .catch(error => {
-          console.log(error);
-          vm.$bus.$emit("message:push", "伺服器內部錯誤!!!", "danger");
-          vm.LOADING(false);
-        });
+          console.log(error)
+          vm.$bus.$emit("message:push", "伺服器內部錯誤!!!", "danger")
+          vm.SETLOADING(false)
+        })
     },
     delAll () {
-      const vm = this;
-      vm.LOADING(true);
+      const vm = this
+      vm.SETLOADING(true)
       vm.carts.forEach(item => {
         var api = `${process.env.APIPATH}/api/${process.env.CUSTOMPATH}/cart/${item.id
-          }`;
+          }`
         vm.axios
           .delete(api)
           .then(response => {
             if (response.data.success) {
-              // console.log("response.data: ", response.data);
-              // vm.getCart();
+              // console.log("response.data: ", response.data)
+              // vm.getCart()
             } else {
-              console.log("刪除商品失敗");
-              vm.$bus.$emit("message:push", "刪除商品失敗", "danger");
+              console.log("刪除商品失敗")
+              vm.$bus.$emit("message:push", "刪除商品失敗", "danger")
             }
           })
           .catch(error => {
-            console.log(error);
-            vm.$bus.$emit("message:push", "伺服器內部錯誤!!!", "danger");
-          });
-      });
-      $("#delCartModal").modal("hide");
-      vm.LOADING(false);
-      vm.carts = [];
-      vm.showOrder = false;
+            console.log(error)
+            vm.$bus.$emit("message:push", "伺服器內部錯誤!!!", "danger")
+          })
+      })
+      $("#delCartModal").modal("hide")
+      vm.SETLOADING(false)
+      vm.carts = []
+      vm.showOrder = false
     },
     addCouponCode () {
-      const vm = this;
-      vm.LOADING(true);
-      const api = `${process.env.APIPATH}/api/${process.env.CUSTOMPATH}/coupon`;
+      const vm = this
+      vm.SETLOADING(true)
+      const api = `${process.env.APIPATH}/api/${process.env.CUSTOMPATH}/coupon`
       const coupon = {
         code: vm.coupon_code
-      };
+      }
       vm.axios
         .post(api, { data: coupon })
         .then(response => {
           if (response.data.success) {
-            vm.coupon_code = "";
-            vm.getCart();
-            // console.log("response.data: ", response.data);
-            // vm.getCart();
+            vm.coupon_code = ""
+            vm.getCart()
+            // console.log("response.data: ", response.data)
+            // vm.getCart()
           } else {
-            console.log("套用優惠券失敗");
-            console.log("response.data: ", response.data);
-            vm.$bus.$emit("message:push", "套用優惠券失敗", "danger");
+            console.log("套用優惠券失敗")
+            console.log("response.data: ", response.data)
+            vm.$bus.$emit("message:push", "套用優惠券失敗", "danger")
           }
-          vm.LOADING(false);
+          vm.SETLOADING(false)
         })
         .catch(error => {
-          console.log(error);
-          vm.$bus.$emit("message:push", "伺服器內部錯誤!!!", "danger");
-          vm.LOADING(false);
-        });
+          console.log(error)
+          vm.$bus.$emit("message:push", "伺服器內部錯誤!!!", "danger")
+          vm.SETLOADING(false)
+        })
     },
     openDelCartModal () {
-      $("#delCartModal").modal("show");
+      $("#delCartModal").modal("show")
     },
     createOrder () {
-      const vm = this;
-      const api = `${process.env.APIPATH}/api/${process.env.CUSTOMPATH}/order`;
-      const order = vm.form;
+      const vm = this
+      const api = `${process.env.APIPATH}/api/${process.env.CUSTOMPATH}/order`
+      const order = vm.form
       vm.$validator.validate().then(result => {
         if (!result) {
-          console.log("欄位不完整");
-          return 0;
+          console.log("欄位不完整")
+          return 0
         } else {
-          vm.LOADING(true);
+          vm.SETLOADING(true)
           vm.axios
             .post(api, { data: order })
             .then(response => {
               if (response.data.success) {
-                console.log("response.data: ", response.data);
-                vm.delAll();
+                console.log("response.data: ", response.data)
+                vm.delAll()
                 vm.$router.push(`/customer_checkout/${response.data.orderId}`)
               } else {
-                vm.$bus.$emit("message:push", response.data.message, "danger");
+                vm.$bus.$emit("message:push", response.data.message, "danger")
               }
-              vm.LOADING(false);
+              vm.SETLOADING(false)
             })
             .catch(error => {
-              console.log(error);
-              vm.$bus.$emit("message:push", "伺服器內部錯誤!!!", "danger");
-              vm.LOADING(false);
-            });
+              console.log(error)
+              vm.$bus.$emit("message:push", "伺服器內部錯誤!!!", "danger")
+              vm.SETLOADING(false)
+            })
         }
-      });
+      })
     }
   }
-};
+}
 </script>
 
 <style scoped>

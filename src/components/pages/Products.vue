@@ -1,9 +1,5 @@
 <template>
-  <div>
-    <!-- Loading 套件 start-->
-    <loading :active.sync="isLoading"></loading>
-    <!-- Loading 套件 end-->
-
+  <div>>
     <!-- 主頁面 start -->
     <div class="text-right mb-4">
       <button
@@ -28,11 +24,11 @@
             <th width="auto" scope="col">名稱</th>
             <th width="120" scope="col">原價</th>
             <th width="120" scope="col">售價</th>
-            <th width="110" scope="col">是否啟用</th>
+            <th width="150" scope="col">是否啟用</th>
             <th width="180" scope="col">編輯</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody v-show="!isLoading && products && products.length>=1">
           <tr v-for="item in products" :key="item.id">
             <td>{{ item.category }}</td>
             <td>{{ item.title }}</td>
@@ -61,13 +57,29 @@
           </tr>
         </tbody>
       </table>
+      <div class="loadingFrame" v-if="isLoading">
+        <loading
+          :active.sync="notFullPageLoading"
+          :is-full-page="false"
+          :background-color="'#fff'"
+          :loader="'dots'"
+          :color="'green'"
+          :height="80"
+          :width="80"
+        ></loading>
+      </div>
+    </div>
+
+    <div class="noData" v-show="!isLoading && isNoData">
+      <img src="./../../assets/imgs/noData.png">
+      <span>暫無資料！</span>
     </div>
     <!-- 主頁面 end -->
 
     <!-- 分頁標籤 start -->
-    <nav aria-label="Page navigation example">
+    <nav aria-label="Page navigation example" v-show="!isLoading && isNoData">
       <ul class="pagination mt-2">
-        <li class="page-item" :class="{ disabled: !pagination.has_pre }">
+        <li class="page-item" :class="{ disabled: !pagination.has_pre || isLoading }">
           <a
             @click.prevent="getProducts(pagination.current_page - 1)"
             class="page-link"
@@ -81,7 +93,7 @@
         <!-- 利用 total_pages 數字做 v-for 迴圈 -->
         <li
           class="page-item"
-          :class="{ active: pagination.current_page === page }"
+          :class="{ active: pagination.current_page === page, disabled: isLoading }"
           v-for="page in pagination.total_pages"
           :key="page"
         >
@@ -89,7 +101,7 @@
             page
           }}</a>
         </li>
-        <li class="page-item" :class="{ disabled: !pagination.has_next }">
+        <li class="page-item" :class="{ disabled: !pagination.has_next || isLoading }">
           <a
             @click.prevent="getProducts(pagination.current_page + 1)"
             class="page-link"
@@ -144,10 +156,6 @@
                 <div class="form-group">
                   <label for="customFile"
                     >或 上傳圖片
-                    <i
-                      class="fas fa-spinner fa-spin"
-                      v-if="status.fileLoading"
-                    ></i>
                   </label>
                   <!-- 監聽使用者上傳檔案,圖片需以模擬表單的形式送出資料至API -->
                   <input
@@ -158,14 +166,27 @@
                     @change="uploadFile()"
                   />
                 </div>
+                <div v-if="currentFile" class="progress">
+                  <div
+                    class="progress-bar progress-bar-info progress-bar-striped"
+                    role="progressbar"
+                    :aria-valuenow="progress"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                    :style="{ width: progress + '%' }"
+                  >
+                    {{ progress }}%
+                  </div>
+                </div>
                 <div
-                  style="
-                    height: 150px;
-                    background-size: cover;
-                    background-position: center;
-                  "
+                  v-if="!isDefault && !status.fileLoading"
+                  class="prodImage"
                   :style="{ backgroundImage: `url(${tempProduct.imageUrl})` }"
-                ></div>
+                >
+                </div>
+                <i v-if="!isDefault && status.fileLoading"
+                class="fas fa-spinner fa-spin fa-3x mt-10"
+                ></i>
               </div>
               <div class="col-sm-8">
                 <div class="form-group">
@@ -339,200 +360,223 @@
 </template>
 
 <script>
-import $ from "jquery";
-import { mapState, mapMutations } from 'vuex'
+import $ from "jquery"
+import { mapState, mapActions, mapMutations } from 'vuex'
+import UploadService from "@/uploadService"
 export default {
   data () {
     return {
-      products: [],
-      pagination: {},
       tempProduct: {
-        title: "",
-        category: "",
-        origin_price: "",
-        price: "",
-        unit: "",
-        image: "",
-        description: "",
-        content: "",
+        title: '',
+        category: '',
+        origin_price: '',
+        price: '',
+        unit: '',
+        image: '',
+        description: '',
+        content: '',
         is_enabled: 0,
-        imageUrl: "",
-        isNew: true
+        imageUrl: '',
+        isNew: true,
       },
+      isDefault: true,
+      progress: 0,
+      currentFile: false,
       status: {
         fileLoading: false
       }
-    };
+    }
   },
   created () {
-    this.getProducts();
+    this.getProducts()
   },
   computed: {
     ...mapState([
-      'isLoading'
+      'isLoading',
+      'isFullPage',
+      'pagination',
+      'products'
     ]),
+    notFullPageLoading () {
+      return this.isLoading && !this.isFullPage
+    },
+    isNoData(){
+      return !this.products || this.products && this.products.length<1
+    }
   },
   methods: {
     ...mapMutations([
-      'LOADING'
+      'SETLOADING'
     ]),
-    getProducts (page = 1) {
-      const vm = this;
-      vm.LOADING(true);
-      const api = `${process.env.APIPATH}/api/${process.env.CUSTOMPATH}/admin/products?page=${page}`;
-      vm.axios
-        .get(api)
-        .then(response => {
-          if (response.data.success) {
-            // console.log("response.data: ", response.data);
-            vm.products = response.data.products;
-            vm.pagination = response.data.pagination;
-          } else {
-            console.log("取得產品失敗");
-            vm.$bus.$emit("message:push", "取得產品失敗", "danger");
-          }
-          vm.LOADING(false);
+    ...mapActions([
+      'GetProducts',
+      'UpdateProduct',
+      'DelProduct'
+    ]),
+    getProducts (page = 1, pagination = false) {
+      return new Promise( ( resolve, reject )=> {
+        if (this.isLoading || pagination && this.pagination.total_pages === 1) reject()
+        const vm = this
+        let apiData = {
+          url: `/admin/products?page=${page}`,
+          method: 'get',
+        }
+        vm.SETLOADING({ isLoading: true, isFullPage: false })
+        vm.GetProducts(apiData).then(data => {
+          console.log('data123:', data)
+        let msgType = data.success ? 'success' : 'danger'
+        if(data.message) vm.$bus.$emit('message:push', data.message, msgType)
+          resolve()
+        }).catch(error => {
+          vm.$bus.$emit('message:push', error.message, 'danger')
+          vm.SETLOADING({ isLoading: false, isFullPage: false })
+          reject()
         })
-        .catch(error => {
-          console.log(error);
-          vm.$bus.$emit("message:push", "伺服器內部錯誤", "danger");
-          vm.LOADING(false);
-        });
+      })
     },
     openProductModal (isNew, item) {
       if (!this.isLoading) {
         if (isNew) {
-          this.tempProduct = {};
-          this.isNew = true;
+          this.tempProduct = {}
+          this.isNew = true
         } else {
-          this.tempProduct = Object.assign({}, item);
-          this.isNew = false;
+          this.tempProduct = Object.assign({}, item)
+          this.isNew = false
         }
-        let modal = $("#productModal");
+        let modal = $('#productModal')
         if (modal) {
-          modal.modal("show");
+          modal.modal('show')
         }
       }
+    },
+    hideModal (id) {
+      let modal = $(id)
+      if (modal) {
+        modal.modal('hide')
+      }
+      this.showImg = false
     },
     updateProduct () {
-      if (!this.isLoading) {
-        let api = `${process.env.APIPATH}/api/${process.env.CUSTOMPATH
-          }/admin/product`;
-        let httpMethod = "post";
-        const vm = this;
-        if (vm.isNew === false) {
-          api = `${process.env.APIPATH}/api/${process.env.CUSTOMPATH
-            }/admin/product/${vm.tempProduct.id}`;
-          httpMethod = "put";
-        }
-        vm.LOADING(true);
-        // 注意 post 傳2個參數，此 API 是傳物件形式 不能直接傳 vm.tempProduct
-        vm.$http[httpMethod](api, { data: vm.tempProduct })
-          .then(response => {
-            // console.log(response.data);
-            // 如果新增成功
-            if (response.data.success) {
-              // 重新取得遠端資料
-              vm.getProducts();
-              let modal = $("#productModal");
-              if (modal) {
-                modal.modal("hide");
-              }
-            } else {
-              if (vm.isNew) {
-                console.log("新增失敗");
-                vm.$bus.$emit(
-                  "message:push",
-                  "新增產品失敗,請先登入",
-                  "danger"
-                );
-              } else {
-                console.log("編輯失敗");
-                vm.$bus.$emit(
-                  "message:push",
-                  "更新產品失敗,請先登入",
-                  "danger"
-                );
-              }
-            }
-          })
-          .catch(error => {
-            console.log(error);
-            vm.$bus.$emit("message:push", "伺服器內部錯誤", "danger");
-          });
+      if (this.isLoading) return
+      const vm = this
+      let apiData = {
+        url: '/admin/product',
+        method: 'post',
+        data: {data: vm.tempProduct}
       }
+      if (vm.isNew === false) {
+        apiData.url += `/${vm.tempProduct.id}`
+        apiData.method = 'put'
+      }
+      vm.SETLOADING({ isLoading: true, isFullPage: false })
+      vm.hideModal('#productModal')
+      vm.UpdateProduct(apiData).then(data => {
+        vm.getProducts().then(res => {
+          let msgType = data.success ? ('success') : 'danger'
+          vm.$bus.$emit('message:push', data.message, msgType)
+        })
+      }).catch(error => {
+        vm.$bus.$emit('message:push', error.message, 'danger')
+        vm.SETLOADING({ isLoading: false, isFullPage: false })
+      })
     },
     openDelProductModal (item) {
-      const vm = this;
-      $("#delProductModal").modal("show");
-      vm.tempProduct = Object.assign({}, item);
+      const vm = this
+      $('#delProductModal').modal('show')
+      vm.tempProduct = Object.assign({}, item)
     },
     deleteProduct () {
-      const vm = this;
-      const api = `${process.env.APIPATH}/api/${process.env.CUSTOMPATH
-        }/admin/product/${vm.tempProduct.id}`;
-      let delIndex = 0;
-      let delItem = {};
-      vm.LOADING(true);
-      vm.axios
-        .delete(api)
-        .then(response => {
-          if (response.data.success === true) {
-            vm.getProducts(vm.pagination.current_page);
-            console.log("刪除完成");
-          } else {
-            console.log("刪除失敗");
-            vm.$bus.$emit("message:push", "刪除產品失敗", "danger");
-          }
-          $("#delProductModal").modal("hide");
-          vm.LOADING(false);
+      if (this.isLoading) return
+      const vm = this
+      let apiData = {
+        url: `/admin/product/${vm.tempProduct.id}`,
+        method: 'delete',
+        data: {data: vm.tempProduct}
+      }
+      vm.hideModal('#delProductModal')
+      vm.SETLOADING({ isLoading: true, isFullPage: false })
+      vm.UpdateProduct(apiData).then(data => {
+        vm.getProducts().then(res => {
+          let msgType = data.success ? ('success') : 'danger'
+          vm.$bus.$emit('message:push', data.message, msgType)
         })
-        .catch(function (error) {
-          console.log(error);
-          vm.$bus.$emit("message:push", "伺服器內部錯誤", "danger");
-          vm.LOADING(false);
-        });
+      }).catch(error => {
+        vm.$bus.$emit('message:push', error.message, 'danger')
+        vm.SETLOADING({ isLoading: false, isFullPage: false })
+      })
     },
     uploadFile () {
+      if (this.$refs.fileInput.files.length === 0) {
+        this.isDefault = true
+        this.progress = 0
+        this.currentFile = null
+        return
+      }
       //利用 $ref 抓取 DOM 中讀到的檔案並模擬表單欄位的形式送出資料至API
-      const vm = this;
-      const uploadedFile = vm.$refs.fileInput.files[0];
-      const formData = new FormData();
-      formData.append("file-to-upload", uploadedFile);
+      const vm = this
+      this.currentFile = vm.$refs.fileInput.files[0]
+      const formData = new FormData()
+      formData.append('file-to-upload', this.currentFile)
       const api = `${process.env.APIPATH}/api/${process.env.CUSTOMPATH
-        }/admin/upload`;
+        }/admin/upload`
+
       //headers 需註明 Content-Type 為表單形式
-      vm.status.fileLoading = true;
       vm.axios
         .post(api, formData, {
-          headers: {
-            "Content-Type": "multipart/form-data"
-          }
-        })
+        headers: {
+          "Content-Type": "multipart/form-data"
+        },
+        onUploadProgress : this.processSetting()
+      })
         .then(response => {
           if (response.data.success === true) {
-            //因路徑使用 v-model 綁定物件內的值,故需用 $set強制寫入做雙向綁定
-            // this.tempProduct.imageUrl = response.data.imageUrl
-            vm.$set(vm.tempProduct, "imageUrl", response.data.imageUrl);
+            vm.status.fileLoading = true
+            let firstImg = new Image()
+            firstImg.onload = () => {
+              //因路徑使用 v-model 綁定物件內的值,故需用 $set強制寫入做雙向綁定
+              // this.tempProduct.imageUrl = response.data.imageUrl
+              vm.$set(vm.tempProduct, 'imageUrl', response.data.imageUrl)
+              vm.status.fileLoading = false
+            }
+            firstImg.src = response.data.imageUrl
           } else {
-            vm.$bus.$emit("message:push", response.data.message, "danger");
+            vm.$bus.$emit('message:push', response.data.message, 'danger')
           }
-          vm.status.fileLoading = false;
         })
         .catch(error => {
-          console.log(error);
-          vm.$bus.$emit("message:push", "伺服器內部錯誤", "danger");
-          vm.status.fileLoading = false;
-        });
+          console.log(error)
+          vm.$bus.$emit('message:push', '伺服器內部錯誤', 'danger')
+          vm.status.fileLoading = false
+          vm.isDefault = true
+        })
+    },
+    processSetting(){
+      this.progress = 0
+      return event => {
+        this.progress = Math.round((100 * event.loaded) / event.total)
+        if(this.progress < 100) return
+        this.status.fileLoading = true
+        this.isDefault = false
+      }
     }
   }
-};
+}
 </script>
 
 <style>
-table td,
-table th {
-  vertical-align: middle !important;
-  text-align: center !important;
-}
+  table td,
+  table th {
+    vertical-align: middle !important;
+    text-align: center !important;
+  }
+  .mt-10{
+    margin-left: 35%;
+    margin-top: 30px;
+  }
+  .prodImage{
+    margin-top: 10px;
+    height: 150px;
+    background-size: cover;
+    background-position: center;
+  }
 </style>

@@ -8,6 +8,7 @@
 export default {
   name: 'App',
   created() {
+    window.store = this.$store.state
   },
 }
 </script>

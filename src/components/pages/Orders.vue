@@ -1,9 +1,5 @@
 <template>
   <div>
-    <!-- Loading 套件 start-->
-    <loading :active.sync="isLoading"></loading>
-    <!-- Loading 套件 end-->
-
     <!-- 訂單內容 start -->
     <div class="row ml-3 mr-1">
       <table class="table table-hover">
@@ -18,11 +14,11 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="order in orders">
+          <tr v-for="order in orders" :key="order.products.id">
             <th scope="row">{{ order['create_at'] }}</th>
             <td>{{ order.user.name }}</td>
             <td>
-              <div v-for="item in order.products">
+              <div v-for="item in order.products" :key="item.id">
                 <p class="text-lg-left">
                   {{ item.product.title + ' ' + item.qty + item.product.unit }}
                 </p>
@@ -41,15 +37,30 @@
           </tr>
         </tbody>
       </table>
+      <div class="loadingFrame" v-if="isLoading">
+        <loading
+          :active.sync="notFullPageLoading"
+          :is-full-page="false"
+          :background-color="'#fff'"
+          :loader="'dots'"
+          :color="'green'"
+          :height="80"
+          :width="80"
+        ></loading>
+      </div>
+    </div>
+    <div class="noData" v-show="!isLoading && isNoData">
+      <img src="./../../assets/imgs/noData.png">
+      <span>暫無資料！</span>
     </div>
     <!-- 訂單內容 end -->
 
     <!-- 分頁標籤 start -->
     <nav aria-label="Page navigation example">
       <ul class="pagination mt-2">
-        <li class="page-item" :class="{ disabled: !pagination.has_pre }">
+        <li class="page-item" :class="{ disabled: !pagination.has_pre || isLoading }">
           <a
-            @click.prevent="getOrders(pagination.current_page - 1)"
+            @click.prevent="getOrders(pagination.current_page - 1, true)"
             class="page-link"
             href="#"
             aria-label="Previous"
@@ -61,17 +72,17 @@
         <!-- 利用 total_pages 數字做 v-for 迴圈 -->
         <li
           class="page-item"
-          :class="{ active: pagination.current_page === page }"
+          :class="{ active: pagination.current_page === page, disabled: isLoading }"
           v-for="page in pagination.total_pages"
           :key="page"
         >
-          <a class="page-link" href="#" @click.prevent="getOrders(page)">{{
+          <a class="page-link" href="#" @click.prevent="getOrders(page, true)">{{
             page
           }}</a>
         </li>
-        <li class="page-item" :class="{ disabled: !pagination.has_next }">
+        <li class="page-item" :class="{ disabled: !pagination.has_next || isLoading }">
           <a
-            @click.prevent="getOrders(pagination.current_page + 1)"
+            @click.prevent="getOrders(pagination.current_page + 1, true)"
             class="page-link"
             href="#"
             aria-label="Next"
@@ -87,54 +98,54 @@
 </template>
 
 <script>
-import $ from "jquery";
-import { mapState, mapMutations } from 'vuex'
+import $ from "jquery"
+import { mapState, mapMutations, mapActions } from 'vuex'
 export default {
   name: "Alert",
   data () {
     return {
-      type: 'add',
-      pagination: {},
-      coupon: {},
-      orders: []
-    };
+    }
   },
   computed: {
     ...mapState([
-      'isLoading'
+      'isLoading',
+      'isFullPage',
+      'pagination',
+      'orders'
     ]),
+    isNoData(){
+      return !this.orders || this.orders && this.orders.length<1
+    },
+    notFullPageLoading () {
+      return this.isLoading && !this.isFullPage
+    }
   },
   methods: {
     ...mapMutations([
-      'LOADING'
+      'SETLOADING'
     ]),
-    getOrders (page = 1) {
-      const vm = this;
-      vm.LOADING(true);
-      const api = `${process.env.APIPATH}/api/${process.env.CUSTOMPATH
-        }/admin/orders?page=${page}`;
-      vm.axios
-        .get(api)
-        .then(response => {
-          if (response.data.success) {
-            // console.log("response.data: ", response.data);
-            vm.orders = response.data.orders;
-            vm.pagination = response.data.pagination;
-          } else {
-            console.log(response.data.message);
-            vm.$bus.$emit("message:push", response.data.message, "danger");
-          }
-          vm.LOADING(false);
-        })
-        .catch(error => {
-          console.log(error);
-          vm.$bus.$emit("message:push", "伺服器內部錯誤!!!", "danger");
-          vm.LOADING(false);
-        });
-    },
+    ...mapActions([
+      'GetOrders'
+    ]),
+    getOrders (page = 1, pagination = false) {
+      if (this.isLoading || pagination && this.pagination.total_pages === 1) return
+      const vm = this
+      let apiData = {
+        url: `/admin/orders?page=${page}`,
+        method: 'get'
+      }
+      vm.SETLOADING({ isLoading: true, isFullPage: false })
+      vm.GetOrders(apiData).then(data => {
+        let msgType = data.success ? 'success' : 'danger'
+        if(data.message) vm.$bus.$emit("message:push", data.message, msgType)
+      }).catch(error => {
+        vm.$bus.$emit("message:push", error.message, "danger")
+        vm.SETLOADING({ isLoading: false, isFullPage: false })
+      })
+    }
   },
   created () {
-    this.getOrders();
+    this.getOrders()
   }
-};
+}
 </script>

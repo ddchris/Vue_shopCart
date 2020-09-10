@@ -305,11 +305,11 @@ export default {
   },
   methods: {
     ...mapMutations([
-      'LOADING'
+      'SETLOADING'
     ]),
     getProducts () {
       const vm = this;
-      vm.LOADING(true);
+      vm.SETLOADING(true);
       const api = `${process.env.APIPATH}/api/${process.env.CUSTOMPATH
         }/products/all`;
       vm.axios
@@ -323,12 +323,12 @@ export default {
             console.log("取得產品失敗");
             vm.$bus.$emit("message:push", "取得產品失敗", "danger");
           }
-          vm.LOADING(false);
+          vm.SETLOADING(false);
         })
         .catch(error => {
           console.log(error);
           vm.$bus.$emit("message:push", "伺服器內部錯誤!", "danger");
-          vm.LOADING(false);
+          vm.SETLOADING(false);
         });
     }
   }

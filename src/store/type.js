@@ -1,2 +1,2 @@
-export const LOADING = 'LOADING'
-export const LOADING2 = 'LOADING2'
+export const SETLOADING = 'SETLOADING'
+export const SETPAGINATION = 'SETPAGINATION'

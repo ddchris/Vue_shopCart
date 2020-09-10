@@ -78,11 +78,11 @@ export default {
   },
   methods: {
     ...mapMutations([
-      'LOADING'
+      'SETLOADING'
     ]),
     getOrder () {
       const vm = this;
-      vm.LOADING(true);
+      vm.SETLOADING(true);
       const api = `${process.env.APIPATH}/api/${process.env.CUSTOMPATH}/order/${this.orderId
         }`;
       vm.axios
@@ -95,23 +95,23 @@ export default {
             // console.log(response.data.message);
             vm.$bus.$emit("message:push", response.data.message, "danger");
           }
-          vm.LOADING(false);
+          vm.SETLOADING(false);
         })
         .catch(error => {
           console.log(error);
           vm.$bus.$emit("message:push", "伺服器內部錯誤!!!", "danger");
-          vm.LOADING(false);
+          vm.SETLOADING(false);
         });
     },
     payOrder () {
       const vm = this;
-      vm.LOADING(true);
+      vm.SETLOADING(true);
       const api = `${process.env.APIPATH}/api/${process.env.CUSTOMPATH}/pay/${this.orderId
         }`;
       vm.axios
         .post(api)
         .then(response => {
-          vm.LOADING(false);
+          vm.SETLOADING(false);
           if (response.data.success) {
             // console.log("response.data: ", response.data);
             vm.order.is_paid = true;
@@ -127,7 +127,7 @@ export default {
         .catch(error => {
           console.log(error);
           vm.$bus.$emit("message:push", "伺服器內部錯誤!!!", "danger");
-          vm.LOADING(false);
+          vm.SETLOADING(false);
         });
     }
   },

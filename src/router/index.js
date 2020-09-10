@@ -10,12 +10,12 @@ export default new Router({
       path: '*',
       redirect: 'admin/products'
     },
-    {
-      path: '/shoppingMall',
-      name: 'ShoppingMall',
-      component: () =>
-        import('@/components/pages/ShoppingMall')
-    },
+    // {
+    //   path: '/shoppingMall',
+    //   name: 'ShoppingMall',
+    //   component: () =>
+    //     import('@/components/pages/ShoppingMall')
+    // },
     {
       path: '/login',
       name: 'Login',
@@ -24,7 +24,7 @@ export default new Router({
     },
     {
       path: '/admin',
-      name: 'Dashboard',
+      name: 'Admin',
       component: () =>
         import('@/components/Dashboard'),
       children: [{
