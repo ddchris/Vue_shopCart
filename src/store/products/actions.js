@@ -12,10 +12,8 @@ export default {
     return res.data
   },
   async UpdateProduct ({ commit }, apiData) {
-    console.log('UpdateProduct')
     let res = await api(apiData)
     commit('SETLOADING', { isLoading: false, isFullPage: false })
-    console.log('res:', res)
     if (res && res.data && res.data.success) {
       commit('UPDATEPRODUCT', res.data)
       // commit('SETPAGINATION', res.data.pagination)
@@ -23,10 +21,8 @@ export default {
     return res.data
   },
   async DelProduct ({ commit }, apiData) {
-    console.log('UpdateProduct')
     let res = await api(apiData)
     commit('SETLOADING', { isLoading: false, isFullPage: false })
-    console.log('res:', res)
     return res.data
   },
 }

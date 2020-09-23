@@ -4,9 +4,10 @@ import { SETLOADING, SETPAGINATION  } from './type'
 import coupons from './coupons'
 import products from './products'
 import orders from './orders'
-import './customOrders'
-import './login'
-import './orders'
+import customOrders from './customOrders'
+// import './customOrders'
+// import './login'
+// import './orders'
 
 Vue.use(Vuex)
 
@@ -17,7 +18,8 @@ export default new Vuex.Store({
     pagination: {},
     ...coupons.states,
     ...products.states,
-    ...orders.states
+    ...orders.states,
+    ...customOrders.states
   },
   mutations: {
     [SETLOADING] (state, data) {
@@ -29,11 +31,13 @@ export default new Vuex.Store({
     },
     ...coupons.mutations,
     ...products.mutations,
-    ...orders.mutations
+    ...orders.mutations,
+    ...customOrders.mutations
   },
   actions: {
     ...coupons.actions,
     ...products.actions,
-    ...orders.actions
+    ...orders.actions,
+    ...customOrders.actions,
   }
 })

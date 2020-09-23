@@ -3,7 +3,7 @@
     <!-- Loading 套件 start-->
     <loading
       :active.sync="fullPageLoading"
-      :is-full-page="false"
+      :is-full-page="true"
       :background-color="'#959595'"
       :loader="'dots'"
       :color="'green'"

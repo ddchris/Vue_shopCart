@@ -6,9 +6,6 @@ import VueAxios from 'vue-axios'
 import Loading from 'vue-loading-overlay'
 import 'vue-loading-overlay/dist/vue-loading.css'
 import 'bootstrap'
-import VeeValidate from 'vee-validate'
-import zhTWVValidate from 'vee-validate/dist/locale/zh_TW'
-
 
 //第三方套件習慣往上放
 
@@ -16,13 +13,12 @@ import App from './App'
 import router from './router'
 import './axios'
 import './bus'
+import './validate'
+// import './utility'
+// import './directives'
 import currencyFilter from './filters/currency'
 import store from './store'
 //自己定義套件放下邊
-
-// 使用表單驗證套件
-VeeValidate.Validator.localize('zhTw', zhTWVValidate)
-Vue.use(VeeValidate)
 
 Vue.use(VueAxios, axios)
 //全域使用第三方 Loading 套件
@@ -36,10 +32,11 @@ axios.defaults.withCredentials = true
 /* eslint-disable no-new */
 new Vue({
   el: '#app',
+  // i18n,
   router,
   store,
   components: {
-    App
+    App,
   },
   template: '<App/>'
 })
@@ -57,7 +54,6 @@ function checkLogin(next) {
   const api = `${process.env.APIPATH}/api/user/check`
   axios.post(api)
     .then(response => {
-      console.log(response)
       if (response.data.success === true) {
         next()
       } else {

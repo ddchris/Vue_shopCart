@@ -366,43 +366,17 @@ export default {
       vm.closeCouponModal()
       vm.SETLOADING({ isLoading: true, isFullPage: false })
       vm.AddCoupon(apiData).then(res => {
-        console.log('then:')
-        console.log('isLoading:', this.isLoading)
-        console.log('isFullPage:', this.isFullPage)
         let type = res.success ? 'success' : 'danger'
         vm.$bus.$emit('message:push', res.message, type)
         this.ADDCOUPONS(vm.coupon)
         vm.coupon = {}
       })
         .catch(error => {
-          console.log(error)
           vm.$bus.$emit("message:push", error.message, "danger")
           vm.closeCouponModal()
           vm.getCoupons()
           vm.coupon = {}
         })
-      // vm.axios[method](api, { data: vm.coupon })
-      //   .then(response => {
-      //     if (response.data.success) {
-      //       // console.log("response.data: ", response.data)
-      //     } else {
-      //       console.log("新增優惠券失敗")
-      //       // console.log("response.data: ", response.data)
-      //       vm.$bus.$emit("message:push", "新增優惠券失敗", "danger")
-      //     }
-      //     vm.getCoupons()
-      //     vm.SETLOADING(false)
-      //     vm.closeCouponModal()
-      //     vm.coupon = {}
-      //   })
-      //   .catch(error => {
-      //     console.log(error)
-      //     vm.$bus.$emit("message:push", "伺服器內部錯誤!!!", "danger")
-      //     vm.getCoupons()
-      //     vm.SETLOADING(false)
-      //     vm.closeCouponModal()
-      //     vm.coupon = {}
-      //   })
     },
     getCoupons (page = 1, pagination = false) {
       if (this.isLoading || pagination && this.pagination.total_pages === 1) return

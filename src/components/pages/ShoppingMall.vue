@@ -316,18 +316,16 @@ export default {
         .get(api)
         .then(response => {
           if (response.data.success) {
-            // console.log("response.data: ", response.data);
             vm.products = response.data.products;
             vm.pagination = response.data.pagination;
           } else {
-            console.log("取得產品失敗");
-            vm.$bus.$emit("message:push", "取得產品失敗", "danger");
+            vm.$bus.$emit('message:push', data.message, 'danger');
           }
           vm.SETLOADING(false);
         })
         .catch(error => {
           console.log(error);
-          vm.$bus.$emit("message:push", "伺服器內部錯誤!", "danger");
+          vm.$bus.$emit('message:push', error.message, 'danger');
           vm.SETLOADING(false);
         });
     }

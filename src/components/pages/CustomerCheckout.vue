@@ -89,10 +89,8 @@ export default {
         .get(api)
         .then(response => {
           if (response.data.success) {
-            // console.log("response.data: ", response.data);
             vm.order = response.data.order;
           } else {
-            // console.log(response.data.message);
             vm.$bus.$emit("message:push", response.data.message, "danger");
           }
           vm.SETLOADING(false);
@@ -113,14 +111,12 @@ export default {
         .then(response => {
           vm.SETLOADING(false);
           if (response.data.success) {
-            // console.log("response.data: ", response.data);
             vm.order.is_paid = true;
             vm.$bus.$emit("message:push", response.data.message, "success");
             setTimeout(() => {
               vm.$router.push(`/customer_orders`);
             }, 500);
           } else {
-            // console.log(response.data.message);
             vm.$bus.$emit("message:push", response.data.message, "danger");
           }
         })

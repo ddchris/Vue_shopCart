@@ -98,7 +98,6 @@ export default {
     }
   },
   created() {
-    console.log('localStorage.getItem', localStorage.getItem('user'))
     if (localStorage.getItem('user')) this.user = JSON.parse(localStorage.getItem('user'))
   }
 }

@@ -1,7 +1,7 @@
 <template>
-  <div>>
+  <div>
     <!-- 主頁面 start -->
-    <div class="text-right mb-4">
+    <div class="text-right mt-4 mb-4">
       <button
         type="button"
         @click="openProductModal(true)"
@@ -140,168 +140,206 @@
               <span aria-hidden="true">&times;</span>
             </button>
           </div>
-          <div class="modal-body">
-            <div class="row">
-              <div class="col-sm-4">
-                <div class="form-group">
-                  <label for="image">輸入圖片網址</label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="image"
-                    placeholder="請輸入圖片連結"
-                    v-model="tempProduct.imageUrl"
-                  />
-                </div>
-                <div class="form-group">
-                  <label for="customFile"
-                    >或 上傳圖片
-                  </label>
-                  <!-- 監聽使用者上傳檔案,圖片需以模擬表單的形式送出資料至API -->
-                  <input
-                    type="file"
-                    id="customFile"
-                    class="form-control"
-                    ref="fileInput"
-                    @change="uploadFile()"
-                  />
-                </div>
-                <div v-if="currentFile" class="progress">
-                  <div
-                    class="progress-bar progress-bar-info progress-bar-striped"
-                    role="progressbar"
-                    :aria-valuenow="progress"
-                    aria-valuemin="0"
-                    aria-valuemax="100"
-                    :style="{ width: progress + '%' }"
-                  >
-                    {{ progress }}%
+          <ValidationObserver ref="form">
+            <form @submit.prevent="onSubmit">
+              <div class="modal-body">
+                <div class="row">
+                  <div class="col-sm-4">
+                    <div class="form-group">
+                      <label for="image">輸入圖片網址</label>
+                      <input
+                        type="text"
+                        class="form-control"
+                        id="image"
+                        placeholder="請輸入圖片連結"
+                        v-model="tempProduct.imageUrl"
+                      />
+                    </div>
+                    <div class="form-group">
+                      <label for="customFile"
+                        >或 上傳圖片
+                      </label>
+                      <!-- 監聽使用者上傳檔案,圖片需以模擬表單的形式送出資料至API -->
+                      <ValidationProvider name="file" :rules="{ required: true, image: true, ext:['jpg','png'], size: 6500 }" ref="provider" v-slot="{ classes, errors }">
+                        <input
+                          :class="classes"
+                          type="file"
+                          class="form-control"
+                          ref="fileInput"
+                          @change="uploadFile($event)"
+                        />
+                        <p :class="classes">{{ errors[0] }}</p>
+                      </ValidationProvider>
+                    </div>
+                    <div v-if="currentFile" class="progress">
+                      <div
+                        class="progress-bar progress-bar-info progress-bar-striped"
+                        role="progressbar"
+                        :aria-valuenow="progress"
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                        :style="{ width: progress + '%' }"
+                      >
+                        {{ progress }}%
+                      </div>
+                    </div>
+                    <div
+                      v-if="!isDefault && !status.fileLoading"
+                      class="prodImage"
+                      :style="{ backgroundImage: `url(${tempProduct.imageUrl})` }"
+                    >
+                    </div>
+                    <i v-if="!isDefault && status.fileLoading"
+                    class="fas fa-spinner fa-spin fa-3x mt-10"
+                    ></i>
+                  </div>
+                  <div class="col-sm-8">
+                    <div class="form-group">
+                      <label for="title">標題</label>
+                      <ValidationProvider name="title" :rules="{required: true, max: 9}" v-slot="{ classes, errors }">
+                        <input
+                          :class="classes"
+                          type="text"
+                          class="form-control"
+                          id="title"
+                          placeholder="請輸入九個字以內的標題"
+                          v-model="tempProduct.title"
+                        />
+                        <p :class="classes">{{ errors[0] }}</p>
+                      </ValidationProvider>
+                    </div>
+
+                    <div class="form-row">
+                      <div class="form-group col-md-6">
+                        <label for="category">分類</label>
+                        <ValidationProvider name="category" :rules="{required: true, max: 6}" v-slot="{ classes, errors }">
+                          <input
+                            :class="classes"
+                            type="text"
+                            class="form-control"
+                            id="category"
+                            placeholder="六個字以內分類"
+                            v-model="tempProduct.category"
+                          />
+                          <p :class="classes">{{ errors[0] }}</p>
+                        </ValidationProvider>
+                      </div>
+                      <div class="form-group col-md-6">
+                        <label for="price">單位</label>
+                        <ValidationProvider name="unit" :rules="{required: true, max: 3}" v-slot="{ classes, errors }">
+                          <input
+                            :class="classes"
+                            type="unit"
+                            class="form-control"
+                            id="unit"
+                            placeholder="三個字以內單位"
+                            v-model="tempProduct.unit"
+                          />
+                          <p :class="classes">{{ errors[0] }}</p>
+                        </ValidationProvider>
+                      </div>
+                    </div>
+
+                    <div class="form-row">
+                      <div class="form-group col-md-6">
+                        <label for="origin_price">原價</label>
+                        <ValidationProvider name="origin_price" :rules="{required: true, digits: true, max: 7}" v-slot="{ classes, errors }">
+                            <!-- v-onlyEngNumber -->
+                          <input
+                            :class="classes"
+                            type="text"
+                            class="form-control"
+                            id="origin_price"
+                            placeholder="請輸入原價"
+                            v-model="tempProduct.origin_price"
+                            @input="restriction('number', 'origin_price', [0,7])"
+                          />
+                          <p :class="classes">{{ errors[0] }}</p>
+                        </ValidationProvider>
+                      </div>
+                      <div class="form-group col-md-6">
+                        <label for="price">售價</label>
+                        <ValidationProvider name="price" :rules="{required: true, digits: true, max: 7}" v-slot="{ classes, errors }">
+                          <input
+                            :class="classes"
+                            type="number"
+                            class="form-control"
+                            id="price"
+                            placeholder="請輸入原價"
+                            v-model="tempProduct.price"
+                          />
+                          <p :class="classes">{{ errors[0] }}</p>
+                        </ValidationProvider>
+                      </div>
+                    </div>
+                    <hr />
+                    <div class="form-group">
+                      <label for="description">產品描述</label>
+                      <ValidationProvider name="description" :rules="{required: true, max: 20}" v-slot="{ classes, errors }">
+                        <textarea
+                          :class="classes"
+                          type="text"
+                          class="form-control"
+                          id="description"
+                          placeholder="請輸入產品描述最多二十字"
+                          v-model="tempProduct.description"
+                          @input="restriction('chineseEngNumber', 'description', [0,20])"
+                        ></textarea>
+                        <p :class="classes">{{ errors[0] }}</p>
+                      </ValidationProvider>
+                    </div>
+                    <div class="form-group">
+                      <label for="content">說明內容</label>
+                      <ValidationProvider name="content" :rules="{required: true, max: 20}" v-slot="{ classes, errors }">
+                        <textarea
+                          type="text"
+                          :class="classes"
+                          class="form-control"
+                          id="content"
+                          placeholder="請輸入產品說明內容"
+                          v-model="tempProduct.content"
+                          @input="restriction('chineseEngNumber', 'content', [0,20])"
+                        ></textarea>
+                        <p :class="classes">{{ errors[0] }}</p>
+                      </ValidationProvider>
+                    </div>
+                    <div class="form-group">
+                      <div class="form-check">
+                        <!-- 修改 true, false 的值 -->
+                        <input
+                          class="form-check-input"
+                          type="checkbox"
+                          id="is_enabled"
+                          v-model="tempProduct.is_enabled"
+                          :true-value="1"
+                          :false-value="0"
+                        />
+                        <label class="form-check-label" for="is_enabled">
+                          是否啟用
+                        </label>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div
-                  v-if="!isDefault && !status.fileLoading"
-                  class="prodImage"
-                  :style="{ backgroundImage: `url(${tempProduct.imageUrl})` }"
+              </div>
+              <div class="modal-footer">
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary"
+                  data-dismiss="modal"
+                  @click="reset"
                 >
-                </div>
-                <i v-if="!isDefault && status.fileLoading"
-                class="fas fa-spinner fa-spin fa-3x mt-10"
-                ></i>
+                  取消
+                </button>
+                <button
+                  type="submit"
+                  class="btn btn-primary"
+                >
+                  確認
+                </button>
               </div>
-              <div class="col-sm-8">
-                <div class="form-group">
-                  <label for="title">標題</label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="title"
-                    placeholder="請輸入標題"
-                    v-model="tempProduct.title"
-                  />
-                </div>
-
-                <div class="form-row">
-                  <div class="form-group col-md-6">
-                    <label for="category">分類</label>
-                    <input
-                      type="text"
-                      class="form-control"
-                      id="category"
-                      placeholder="請輸入分類"
-                      v-model="tempProduct.category"
-                    />
-                  </div>
-                  <div class="form-group col-md-6">
-                    <label for="price">單位</label>
-                    <input
-                      type="unit"
-                      class="form-control"
-                      id="unit"
-                      placeholder="請輸入單位"
-                      v-model="tempProduct.unit"
-                    />
-                  </div>
-                </div>
-
-                <div class="form-row">
-                  <div class="form-group col-md-6">
-                    <label for="origin_price">原價</label>
-                    <input
-                      type="number"
-                      class="form-control"
-                      id="origin_price"
-                      placeholder="請輸入原價"
-                      v-model="tempProduct.origin_price"
-                    />
-                  </div>
-                  <div class="form-group col-md-6">
-                    <label for="price">售價</label>
-                    <input
-                      type="number"
-                      class="form-control"
-                      id="price"
-                      placeholder="請輸入售價"
-                      v-model="tempProduct.price"
-                    />
-                  </div>
-                </div>
-                <hr />
-
-                <div class="form-group">
-                  <label for="description">產品描述</label>
-                  <textarea
-                    type="text"
-                    class="form-control"
-                    id="description"
-                    placeholder="請輸入產品描述"
-                    v-model="tempProduct.description"
-                  ></textarea>
-                </div>
-                <div class="form-group">
-                  <label for="content">說明內容</label>
-                  <textarea
-                    type="text"
-                    class="form-control"
-                    id="content"
-                    placeholder="請輸入產品說明內容"
-                    v-model="tempProduct.content"
-                  ></textarea>
-                </div>
-                <div class="form-group">
-                  <div class="form-check">
-                    <!-- 修改 true, false 的值 -->
-                    <input
-                      class="form-check-input"
-                      type="checkbox"
-                      id="is_enabled"
-                      v-model="tempProduct.is_enabled"
-                      :true-value="1"
-                      :false-value="0"
-                    />
-                    <label class="form-check-label" for="is_enabled">
-                      是否啟用
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button
-              type="button"
-              class="btn btn-outline-secondary"
-              data-dismiss="modal"
-            >
-              取消
-            </button>
-            <button
-              type="button"
-              class="btn btn-primary"
-              @click="updateProduct()"
-            >
-              確認
-            </button>
-          </div>
+            </form>
+          </ValidationObserver>
         </div>
       </div>
     </div>
@@ -362,6 +400,7 @@
 <script>
 import $ from "jquery"
 import { mapState, mapActions, mapMutations } from 'vuex'
+import { restriction } from '@/utility'
 import UploadService from "@/uploadService"
 export default {
   data () {
@@ -423,7 +462,6 @@ export default {
         }
         vm.SETLOADING({ isLoading: true, isFullPage: false })
         vm.GetProducts(apiData).then(data => {
-          console.log('data123:', data)
         let msgType = data.success ? 'success' : 'danger'
         if(data.message) vm.$bus.$emit('message:push', data.message, msgType)
           resolve()
@@ -439,7 +477,9 @@ export default {
         if (isNew) {
           this.tempProduct = {}
           this.isNew = true
+          this.progress = 0
         } else {
+          this.isDefault = false
           this.tempProduct = Object.assign({}, item)
           this.isNew = false
         }
@@ -455,6 +495,7 @@ export default {
         modal.modal('hide')
       }
       this.showImg = false
+      this.isDefault = true
     },
     updateProduct () {
       if (this.isLoading) return
@@ -505,50 +546,58 @@ export default {
         vm.SETLOADING({ isLoading: false, isFullPage: false })
       })
     },
-    uploadFile () {
-      if (this.$refs.fileInput.files.length === 0) {
+    async uploadFile (e) {
+      const { valid } = await this.$refs.provider.validate(e)
+      if (this.$refs.fileInput.files.length !== 0 && valid) {
+        // TODO: Upload the file
+        console.log('Uploaded the file...')
+        //利用 $ref 抓取 DOM 中讀到的檔案並模擬表單欄位的形式送出資料至API
+        const vm = this
+        this.currentFile = vm.$refs.fileInput.files[0]
+        const formData = new FormData()
+        formData.append('file-to-upload', this.currentFile)
+        const api = `${process.env.APIPATH}/api/${process.env.CUSTOMPATH
+          }/admin/upload`
+
+        //headers 需註明 Content-Type 為表單形式
+        vm.axios
+          .post(api, formData, {
+          headers: {
+            "Content-Type": "multipart/form-data"
+          },
+          onUploadProgress : this.processSetting()
+        })
+          .then(response => {
+            if (response.data.success === true) {
+              vm.status.fileLoading = true
+              let firstImg = new Image()
+              firstImg.onload = () => {
+                //因路徑使用 v-model 綁定物件內的值,故需用 $set強制寫入做雙向綁定
+                // this.tempProduct.imageUrl = response.data.imageUrl
+                vm.$set(vm.tempProduct, 'imageUrl', response.data.imageUrl)
+                vm.status.fileLoading = false
+              }
+              firstImg.src = response.data.imageUrl
+            } else {
+              vm.$bus.$emit('message:push', response.data.message.message, 'danger')
+              vm.status.fileLoading = false
+              vm.isDefault = true
+              vm.progress = 0
+            }
+          })
+          .catch(error => {
+            console.log(error)
+            vm.$bus.$emit('message:push', '伺服器內部錯誤', 'danger')
+            vm.status.fileLoading = false
+            vm.isDefault = true
+            vm.progress = 0
+          })
+      } else {
         this.isDefault = true
         this.progress = 0
         this.currentFile = null
         return
       }
-      //利用 $ref 抓取 DOM 中讀到的檔案並模擬表單欄位的形式送出資料至API
-      const vm = this
-      this.currentFile = vm.$refs.fileInput.files[0]
-      const formData = new FormData()
-      formData.append('file-to-upload', this.currentFile)
-      const api = `${process.env.APIPATH}/api/${process.env.CUSTOMPATH
-        }/admin/upload`
-
-      //headers 需註明 Content-Type 為表單形式
-      vm.axios
-        .post(api, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data"
-        },
-        onUploadProgress : this.processSetting()
-      })
-        .then(response => {
-          if (response.data.success === true) {
-            vm.status.fileLoading = true
-            let firstImg = new Image()
-            firstImg.onload = () => {
-              //因路徑使用 v-model 綁定物件內的值,故需用 $set強制寫入做雙向綁定
-              // this.tempProduct.imageUrl = response.data.imageUrl
-              vm.$set(vm.tempProduct, 'imageUrl', response.data.imageUrl)
-              vm.status.fileLoading = false
-            }
-            firstImg.src = response.data.imageUrl
-          } else {
-            vm.$bus.$emit('message:push', response.data.message, 'danger')
-          }
-        })
-        .catch(error => {
-          console.log(error)
-          vm.$bus.$emit('message:push', '伺服器內部錯誤', 'danger')
-          vm.status.fileLoading = false
-          vm.isDefault = true
-        })
     },
     processSetting(){
       this.progress = 0
@@ -558,6 +607,25 @@ export default {
         this.status.fileLoading = true
         this.isDefault = false
       }
+    },
+    restriction(type, fieldName, between){
+      this.tempProduct[fieldName] = restriction( this.tempProduct[fieldName], type, between)
+    },
+    async onSubmit () {
+      let success = await this.$refs.form.validate()
+      if (!success) {
+        return
+      }
+      this.updateProduct()
+
+      // Resetting Values
+      // Wait until the models are updated in the UI
+      this.$nextTick(() => {
+        this.$refs.form.reset()
+      })
+    },
+    reset () {
+      this.$refs.form.reset()
     }
   }
 }

@@ -6,10 +6,7 @@
 
 <script>
 export default {
-  name: 'App',
-  created() {
-    window.store = this.$store.state
-  },
+  name: 'App'
 }
 </script>
 

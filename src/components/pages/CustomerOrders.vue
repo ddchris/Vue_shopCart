@@ -3,7 +3,7 @@
     <!-- 商品內容 start -->
     <!-- 外層加上 BS4 格線用 div -->
     <div class="row mt-4">
-      <div class="col-md-4 mb-4" v-for="item in products" :key="item.id">
+      <div class="col-md-4 mb-4" v-for="item in productsAll" :key="item.id">
         <div class="card border-0 shadow-sm">
           <!-- 綁定背景圖片 -->
           <div
@@ -73,7 +73,7 @@
         <div class="modal-content border-0">
           <div class="modal-header bg-dark text-white">
             <h5 class="modal-title" id="exampleModalLabel">
-              <span>{{ tempProduct.title }}</span>
+              <span>{{ product.title }}</span>
             </h5>
             <button
               type="button"
@@ -85,42 +85,42 @@
             </button>
           </div>
           <div class="modal-body">
-            <img :src="tempProduct.imageUrl" class="img-fluid" alt="" />
+            <img :src="product.imageUrl" class="img-fluid" alt="" />
             <blockquote class="blockquote mt-3">
-              <p class="mb-0">{{ tempProduct.content }}</p>
+              <p class="mb-0">{{ product.content }}</p>
               <footer class="blockquote text-right"></footer>
             </blockquote>
             <div class="d-flex justify-content-between align-items-baseline">
-              <div class="h4" v-if="!tempProduct.price">
-                {{ tempProduct.origin_price }} 元
+              <div class="h4" v-if="!product.price">
+                {{ product.origin_price }} 元
               </div>
-              <del class="h6" v-if="tempProduct.price"
-                >原價 {{ tempProduct.origin_price }} 元</del
+              <del class="h6" v-if="product.price"
+                >原價 {{ product.origin_price }} 元</del
               >
-              <div class="h4" v-if="tempProduct.price">
-                現在只要 {{ tempProduct.price }} 元
+              <div class="h4" v-if="product.price">
+                現在只要 {{ product.price }} 元
               </div>
             </div>
             <select
               name="number"
               class="form-control mt-3"
-              v-model="tempProduct.num"
+              v-model="product.num"
             >
-              <option value="1" selected>選購1{{ tempProduct.unit }}</option>
+              <option value="1" selected>選購1{{ product.unit }}</option>
               <option v-for="n in 9" :value="n + 1" :key="n">
-                選購{{ n + 1 }}{{ tempProduct.unit }}
+                選購{{ n + 1 }}{{ product.unit }}
               </option>
             </select>
           </div>
           <div class="modal-footer">
             <div class="text-muted text-nowrap mr-3">
               <i class="fas fa-dollar-sign"></i>
-              小計 <strong>{{ tempProduct.num * tempProduct.price }}</strong> 元
+              小計 <strong>{{ product.num * product.price }}</strong> 元
             </div>
             <button
               type="button"
               class="btn btn-primary"
-              @click="addCart(tempProduct.id, tempProduct.num, true)"
+              @click="addCart(product.id, product.num, true)"
             >
               加入購物車
             </button>
@@ -151,8 +151,8 @@
           <tbody>
             <tr class="pt-3 pb-3" v-for="item in carts" :key="item.id">
               <td class="text-center align-middle text-danger del">
-                <button type="button" class="btn btn-outline-danger">
-                  <i @click="delItem(item.id)" class="far fa-trash-alt"></i>
+                <button @click.stop="delItem(item.id)" type="button" class="btn btn-outline-danger">
+                  <i class="far fa-trash-alt"></i>
                 </button>
               </td>
               <td class="text-center align-middle">
@@ -212,92 +212,111 @@
         </div>
       </div>
     </div>
+
+    <div class="loadingFrame" v-if="isLoading">
+      <loading
+        :active.sync="notFullPageLoading"
+        :is-full-page="false"
+        :background-color="'#fff'"
+        :loader="'dots'"
+        :color="'green'"
+        :height="80"
+        :width="80"
+      ></loading>
+    </div>
     <!-- 訂單表格 end -->
 
+    <!-- <button @click="switchLoc">Switch Locale</button> -->
     <!-- 訂單資料表格 start -->
-    <div v-if="showOrder" class="my-5 row justify-content-center">
-      <form class="col-md-6" @submit.prevent="createOrder()">
+    <div v-if="showOrder" class="row justify-content-center">
+      <ValidationObserver ref="form" tag="form" class="col-md-6" @submit.prevent="onSubmit()">
         <div class="form-group">
           <label for="useremail">Email</label>
-          <input
-            v-validate="'required|email'"
-            type="email"
+          <validation-provider rules="required|email" v-slot="{ errors, classes }">
+            <input
+            :class="classes"
             class="form-control"
-            name="email"
-            id="useremail"
             v-model.trim="form.user.email"
-            placeholder="請輸入 Email"
-          />
-          <span class="text-danger">{{ errors.first('email') }}</span>
+            type="email"
+            name="email"
+            @input="restriction('email', 'email')"
+            >
+            <div :class="classes">{{ errors[0] }}</div>
+          </validation-provider>
         </div>
-
         <div class="form-group">
           <label for="username">收件人姓名</label>
-          <input
-            :class="{ 'is-invalid': errors.has('name') }"
-            v-validate="'required'"
+          <validation-provider :rules="{ required: true, regex: /^[\u4E00-\u9FA5a-zA-Z]{1,5}$/ }" v-slot="{ errors, classes }">
+            <input
             type="text"
+            :class="classes"
             class="form-control"
             name="name"
             id="username"
             v-model.trim="form.user.name"
             placeholder="輸入姓名"
-          />
-          <span v-if="errors.has('name')" class="text-danger"
-            >姓名不能留空</span
-          >
+            @input="restriction('chineseEng', 'name')"
+            >
+            <div class="text-danger" v-show=" errors[0]">Please enter 2-5 Chinese or English character!</div>
+          </validation-provider>
         </div>
 
         <div class="form-group">
           <label for="usertel">收件人電話</label>
-          <input
-            data-vv-as="電話"
+          <validation-provider :rules="{ required: true, min: 1, max: 10, digits: true}" v-slot="{ errors, classes }">
+            <input
+            :class="classes"
             name="tel"
-            v-validate="'required|max:10|digits:10'"
             type="tel"
             class="form-control"
             id="usertel"
             v-model="form.user.tel"
             placeholder="請輸入電話"
-          />
-          <span class="text-danger">{{ errors.first('tel') }}</span>
+            @input="restriction('number', 'tel', [1,10])"
+            >
+            <div class="text-danger" v-show=" errors[0]">Please enter 1-10 number character!</div>
+          </validation-provider>
         </div>
 
         <div class="form-group">
           <label for="useraddress">收件人地址</label>
-          <input
-            v-validate="'required'"
+          <validation-provider :rules="{ required: true, min: 1, max: 30}" v-slot="{ errors, classes }">
+            <input
+            :class="classes"
             type="address"
             class="form-control"
             name="address"
             id="useraddress"
             v-model.trim="form.user.address"
             placeholder="請輸入地址"
-          />
-          <span v-if="errors.has('address')" class="text-danger"
-            >地址不能留空</span
-          >
+            @input="restriction('chineseEngNumber', 'address', [0,30])"
+            >
+            <div class="text-danger" v-show="errors[0]">Please enter 0-30 number character!</div>
+          </validation-provider>
         </div>
-
         <div class="form-group">
           <label for="useraddress">留言</label>
-          <textarea
+          <validation-provider :rules="{ required: true, min: 0, max: 100}" v-slot="{ errors, classes }">
+            <textarea
+            :class="classes"
             name=""
             id=""
             class="form-control"
             cols="30"
             rows="10"
             v-model.trim="form.message"
-          ></textarea>
+            @input="restrictionMsg('chineseEngNumber', 'message', [0,100])"
+            ></textarea>
+            <div class="text-danger" v-show="errors[0]">Please enter 0-100 character!</div>
+          </validation-provider>
         </div>
         <div class="text-right">
-          <button class="btn btn-danger">送出訂單</button>
+          <button type="submit" class="btn btn-danger">送出訂單</button>
         </div>
-      </form>
+      </ValidationObserver>
     </div>
     <!-- 訂單資料表格 end -->
 
-    <!-- delCartModal start -->
     <div
       class="modal fade"
       id="delCartModal"
@@ -348,290 +367,277 @@
 
 <script>
 import $ from "jquery"
-import { mapState, mapMutations } from 'vuex'
+import { mapState, mapActions, mapMutations } from 'vuex'
+import { restriction, throttle, debounce } from '@/utility'
 export default {
+  component: {
+    // ValidationProvider
+  },
   data () {
     return {
-      products: [],
-      pagination: {},
-      tempProduct: {
-        title: "",
-        category: "",
-        origin_price: "",
-        price: "",
-        unit: "",
-        image: "",
-        description: "",
-        content: "",
-        is_enabled: 0,
-        imageUrl: "",
-        isNew: true,
-        num: 1
-      },
       status: {
-        loadingItem: "",
-        addItem: ""
+        loadingItem: '',
+        addItem: ''
       },
-      carts: [],
-      finalTotal: 0,
-      total: 0,
-      showOrder: false,
-      coupon_code: "",
+      coupon_code: '',
       form: {
         user: {
-          name: "",
-          phone: "",
-          email: "",
-          tel: "",
-          address: ""
+          name: '',
+          phone: '',
+          email: '',
+          tel: '',
+          address: ''
         },
-        message: ""
-      }
+        message: ''
+      },
+      password: '',
+      confirmation: '',
+      delItemForAll: ''
     }
   },
   created () {
-    this.getProducts()
-    this.getCart()
+    this.delItemForAll = this.delItem
+    this.delItem = this.debounce(this.delItem, 2000)
+    this.addCart = this.throttle(this.addCart, 1000)
+    this.addCouponCode = this.throttle(this.addCouponCode, 1000)
+    const vm = this
+    vm.SETLOADING({ isLoading: true, isFullPage: true })
+    Promise.all([vm.getProducts(), vm.getCart()]).then((result) => {
+        vm.SETLOADING({ isLoading: false, isFullPage: true })
+    });
   },
   computed: {
     ...mapState([
-      'isLoading'
+      'isLoading',
+      'isFullPage',
+      'pagination',
+      'productsAll',
+      'product',
+      'carts',
+      'finalTotal',
+      'total',
+      'showOrder',
     ]),
+    notFullPageLoading () {
+      return this.isLoading && !this.isFullPage
+    }
   },
   methods: {
     ...mapMutations([
-      'SETLOADING'
+      'SETLOADING',
+      'DELALL',
+    ]),
+    ...mapActions([
+      'GetProductsAll',
+      'GetProduct',
+      'CreateOrder',
+      'AddCart',
+      'GetCart',
+      'DelItem',
+      'AddCouponCode',
     ]),
     getProducts () {
       const vm = this
-      vm.SETLOADING(true)
-      const api = `${process.env.APIPATH}/api/${process.env.CUSTOMPATH
-        }/products/all`
-      vm.axios
-        .get(api)
-        .then(response => {
-          if (response.data.success) {
-            // console.log("response.data: ", response.data)
-            vm.products = response.data.products
-            vm.pagination = response.data.pagination
-          } else {
-            console.log("取得產品失敗")
-            vm.$bus.$emit("message:push", "取得產品失敗", "danger")
-          }
-          vm.SETLOADING(false)
+      return new Promise( ( resolve, reject )=> {
+        // if (vm.isLoading) reject()
+        let apiData = {
+          url: `/products/all`,
+          method: 'get',
+        }
+        // vm.SETLOADING({ isLoading: true, isFullPage: false })
+        vm.GetProductsAll(apiData).then(data => {
+        let msgType = data.success ? 'success' : 'danger'
+        if(data.message) vm.$bus.$emit('message:push', data.message, msgType)
+          resolve()
+        }).catch(error => {
+          vm.$bus.$emit('message:push', error.message, 'danger')
+          // vm.SETLOADING({ isLoading: false, isFullPage: false })
+          reject()
         })
-        .catch(error => {
-          console.log(error)
-          vm.$bus.$emit("message:push", "伺服器內部錯誤!", "danger")
-          vm.SETLOADING(false)
-        })
+      })
     },
     getProduct (id) {
       const vm = this
       vm.status.loadingItem = id
-      const api = `${process.env.APIPATH}/api/${process.env.CUSTOMPATH
-        }/product/${id}`
-      vm.axios
-        .get(api)
-        .then(response => {
-          if (response.data.success) {
-            // console.log("response.data: ", response.data.product)
-            vm.tempProduct = response.data.product
-            vm.tempProduct.num = 1
-          } else {
-            console.log("取得產品失敗")
-            vm.$bus.$emit("message:push", "取得產品失敗", "danger")
-          }
-          $("#productModal").modal("show")
-          vm.status.loadingItem = ""
-        })
-        .catch(error => {
-          console.log(error)
-          vm.$bus.$emit("message:push", "伺服器內部錯誤", "danger")
-          vm.status.loadingItem = ""
-        })
+
+      if (this.isLoading) ''
+      let apiData = {
+        url: `/product/${id}`,
+        method: 'get',
+      }
+      vm.GetProduct(apiData).then(data => {
+        $("#productModal").modal("show")
+        vm.status.loadingItem = ""
+      }).catch(error => {
+        vm.$bus.$emit('message:push', error.message, 'danger')
+        vm.status.loadingItem = ""
+      })
     },
-    addCart (id, qty = 1, byModal) {
+    async addCart (id, qty = 1, byModal) {
       const vm = this
+      if(vm.status.addItem) return
       if (byModal) {
-        vm.SETLOADING(true)
+        vm.SETLOADING({ isLoading: true, isFullPage: true })
       } else {
         vm.status.addItem = id
       }
-      const api = `${process.env.APIPATH}/api/${process.env.CUSTOMPATH}/cart`
       const cart = {
         product_id: id,
         qty
       }
-      vm.axios
-        .post(api, { data: cart })
-        .then(response => {
-          if (response.data.success) {
-            // console.log("response.data: ", response.data)
-          } else {
-            console.log("取得產品失敗")
-            vm.$bus.$emit("message:push", "加入購物車失敗", "danger")
-          }
-          vm.status.addItem = ""
-          $("#productModal").modal("hide")
-          vm.getCart()
+      let apiData = {
+        url: `/cart`,
+        method: 'post',
+        data: { data: cart }
+      }
+
+      vm.AddCart(apiData).then(data => {
+        vm.status.addItem = ''
+        vm.getCart().then(data => {
+          $('#productModal').modal('hide')
         })
-        .catch(error => {
-          console.log(error)
-          vm.$bus.$emit("message:push", "伺服器內部錯誤!!", "danger")
-          vm.status.addItem = ""
-          vm.status.loadingItem = ""
-          $("#productModal").modal("hide")
-          vm.getCart()
+      }).catch(error => {
+        vm.$bus.$emit('message:push', error.message, 'danger')
+        vm.status.addItem = ''
+        vm.getCart().then(data => {
+          $('#productModal').modal('hide')
         })
+      })
     },
     getCart () {
-      const vm = this
-      vm.SETLOADING(true)
-      const api = `${process.env.APIPATH}/api/${process.env.CUSTOMPATH}/cart`
-      vm.axios
-        .get(api)
-        .then(response => {
-          if (response.data.success) {
-            // console.log("response.data.carts: ", response.data.data)
-            if (
-              response.data.data.carts &&
-              response.data.data.carts.length !== 0
-            ) {
-              vm.carts = [...response.data.data.carts]
-              vm.total = response.data.data.total
-              vm.finalTotal = response.data.data.final_total
-              vm.showOrder = true
-              console.log("vm.carts", response.data.data)
-            } else {
-              vm.carts = []
-              vm.showOrder = false
-              console.log("here")
-            }
-          } else {
-            console.log("取得購物車失敗")
-            vm.showOrder = false
-            vm.$bus.$emit("message:push", "取得得購物車失敗", "danger")
-          }
-          vm.SETLOADING(false)
+      return new Promise( ( resolve, reject )=> {
+        const vm = this
+        let apiData = {
+          url: `/cart`,
+          method: 'get'
+        }
+        vm.GetCart(apiData).then(data => {
+          // vm.SETLOADING({ isLoading: false, isFullPage: true })
+          resolve()
+        }).catch(error => {
+          vm.$bus.$emit('message:push', error.message, 'danger')
+          reject()
         })
-        .catch(error => {
-          console.log(error)
-          vm.$bus.$emit("message:push", "伺服器內部錯誤!!!", "danger")
-          vm.showOrder = false
-          vm.SETLOADING(false)
-        })
+      })
     },
-    delItem (id) {
-      const vm = this
-      vm.SETLOADING(true)
-      const api = `${process.env.APIPATH}/api/${process.env.CUSTOMPATH
-        }/cart/${id}`
-      vm.axios
-        .delete(api)
-        .then(response => {
-          if (response.data.success) {
-            // console.log("response.data: ", response.data)
-            vm.getCart()
+    delItem (id, deleteAll = false) {
+      return new Promise( ( resolve, reject )=> {
+        // if (this.isLoading && !deleteAll) reject()
+        const vm = this
+        let apiData = {
+          url: `/cart/${id}`,
+          method: 'delete'
+        }
+        if(!deleteAll) vm.SETLOADING({ isLoading: true, isFullPage: true })
+        vm.DelItem(apiData).then(data => {
+          if (data.success) {
+            if(!deleteAll) vm.getCart()
           } else {
-            console.log("刪除商品失敗")
-            vm.$bus.$emit("message:push", "刪除商品失敗", "danger")
+            vm.$bus.$emit('message:push', data.message, 'danger')
           }
-          vm.SETLOADING(false)
+          vm.$nextTick( ()=> {
+            vm.SETLOADING({ isLoading: false, isFullPage: true })
+          })
+          resolve()
+        }).catch(error => {
+          vm.$bus.$emit('message:push', error.message, 'danger')
+          if(!deleteAll) vm.getCart()
+          vm.SETLOADING({ isLoading: false, isFullPage: true })
+          reject()
         })
-        .catch(error => {
-          console.log(error)
-          vm.$bus.$emit("message:push", "伺服器內部錯誤!!!", "danger")
-          vm.SETLOADING(false)
-        })
+      })
     },
     delAll () {
       const vm = this
+      let promiseArray = []
       vm.SETLOADING(true)
       vm.carts.forEach(item => {
-        var api = `${process.env.APIPATH}/api/${process.env.CUSTOMPATH}/cart/${item.id
-          }`
-        vm.axios
-          .delete(api)
-          .then(response => {
-            if (response.data.success) {
-              // console.log("response.data: ", response.data)
-              // vm.getCart()
-            } else {
-              console.log("刪除商品失敗")
-              vm.$bus.$emit("message:push", "刪除商品失敗", "danger")
-            }
-          })
-          .catch(error => {
-            console.log(error)
-            vm.$bus.$emit("message:push", "伺服器內部錯誤!!!", "danger")
-          })
+        let promise = vm.delItemForAll(item.id, true)
+        promiseArray.push(promise)
       })
-      $("#delCartModal").modal("hide")
-      vm.SETLOADING(false)
-      vm.carts = []
-      vm.showOrder = false
+      Promise.all(promiseArray).then(data => {
+        vm.DELALL()
+        vm.getCart()
+        $("#delCartModal").modal("hide")
+        vm.SETLOADING({ isLoading: false, isFullPage: false })
+      })
     },
     addCouponCode () {
+      if(!this.coupon_code) return
       const vm = this
-      vm.SETLOADING(true)
-      const api = `${process.env.APIPATH}/api/${process.env.CUSTOMPATH}/coupon`
       const coupon = {
         code: vm.coupon_code
       }
-      vm.axios
-        .post(api, { data: coupon })
-        .then(response => {
-          if (response.data.success) {
-            vm.coupon_code = ""
-            vm.getCart()
-            // console.log("response.data: ", response.data)
-            // vm.getCart()
-          } else {
-            console.log("套用優惠券失敗")
-            console.log("response.data: ", response.data)
-            vm.$bus.$emit("message:push", "套用優惠券失敗", "danger")
-          }
-          vm.SETLOADING(false)
-        })
-        .catch(error => {
-          console.log(error)
-          vm.$bus.$emit("message:push", "伺服器內部錯誤!!!", "danger")
-          vm.SETLOADING(false)
-        })
+      let apiData = {
+        url: `/coupon`,
+        method: 'post',
+        data: { data: coupon }
+      }
+      vm.AddCouponCode(apiData).then(data => {
+        if (data.success) {
+          vm.coupon_code = ''
+          vm.getCart()
+        } else {
+          vm.$bus.$emit('message:push', data.message, 'danger')
+        }
+        vm.SETLOADING({ isLoading: false, isFullPage: false })
+      }).catch(error => {
+        vm.$bus.$emit('message:push', error.message, 'danger')
+        vm.getCart()
+        vm.SETLOADING({ isLoading: false, isFullPage: false })
+      })
     },
     openDelCartModal () {
-      $("#delCartModal").modal("show")
+      $('#delCartModal').modal('show')
     },
     createOrder () {
-      const vm = this
-      const api = `${process.env.APIPATH}/api/${process.env.CUSTOMPATH}/order`
-      const order = vm.form
-      vm.$validator.validate().then(result => {
-        if (!result) {
-          console.log("欄位不完整")
-          return 0
-        } else {
-          vm.SETLOADING(true)
-          vm.axios
-            .post(api, { data: order })
-            .then(response => {
-              if (response.data.success) {
-                console.log("response.data: ", response.data)
-                vm.delAll()
-                vm.$router.push(`/customer_checkout/${response.data.orderId}`)
-              } else {
-                vm.$bus.$emit("message:push", response.data.message, "danger")
-              }
-              vm.SETLOADING(false)
-            })
-            .catch(error => {
-              console.log(error)
-              vm.$bus.$emit("message:push", "伺服器內部錯誤!!!", "danger")
-              vm.SETLOADING(false)
-            })
+      return new Promise( ( resolve, reject )=> {
+        if (this.isLoading) reject()
+        const vm = this
+        let apiData = {
+          url: `/order`,
+          method: 'get',
+          data : { data: vm.form }
         }
+        vm.SETLOADING({ isLoading: true, isFullPage: false })
+        vm.CreateOrder(apiData).then(data => {
+        let msgType = data.success ? 'success' : 'danger'
+        if(data.message) vm.$bus.$emit('message:push', data.message, msgType)
+          resolve()
+        }).catch(error => {
+          vm.$bus.$emit('message:push', error.message, 'danger')
+          vm.SETLOADING({ isLoading: false, isFullPage: false })
+          reject()
+        })
       })
+    },
+    restriction (type, fieldName, between) {
+      this.form.user[fieldName] = restriction(this.form.user[fieldName], type, between)
+    },
+    restrictionMsg (type, fieldName, between) {
+      this.form[fieldName] = restriction(this.form[fieldName], type, between)
+    },
+    async onSubmit () {
+      let success = await this.$refs.form.validate()
+      if (!success) {
+        return
+      }
+      this.createOrder()
+
+      // Resetting Values
+      // Wait until the models are updated in the UI
+      this.$nextTick(() => {
+        this.$refs.form.reset()
+      })
+    },
+    reset () {
+      this.$refs.form.reset()
+    },
+    throttle(fn, time) {
+      return throttle(fn, time)
+    },
+    debounce(fn, time) {
+      return debounce(fn, time)
     }
   }
 }

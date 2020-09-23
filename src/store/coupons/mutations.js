@@ -9,12 +9,9 @@ export default {
     state.coupons.push(coupon)
   },
   [DELCOUPON] (state, id) {
-    state.coupons.every((x, index) => {
-      console.log('x.id:', x.id)
-      console.log('id:', id)
-      if (x.id === id) {
+    state.coupons.every((coupon, index) => {
+      if (coupon.id === id) {
         state.coupons.splice(index, 1)
-        console.log('state.coupons:', state.coupons)
         return false
       }
       return true
